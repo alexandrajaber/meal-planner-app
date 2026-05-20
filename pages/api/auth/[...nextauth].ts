@@ -1,6 +1,6 @@
 import NextAuth from 'next-auth'
 import GoogleProvider from 'next-auth/providers/google'
-
+ 
 export default NextAuth({
   providers: [
     GoogleProvider({
@@ -24,9 +24,15 @@ export default NextAuth({
       return token
     },
     async session({ session, token }) {
-      session.accessToken = token.accessToken
+      if (token.accessToken) {
+        session.accessToken = token.accessToken as string
+      }
       return session
     },
+  },
+  pages: {
+    signIn: '/',
+    error: '/',
   },
   secret: process.env.NEXTAUTH_SECRET,
 })
