@@ -14,6 +14,8 @@ export default function Home() {
   const [mealPlan, setMealPlan] = useState([])
   const [shoppingList, setShoppingList] = useState([])
   const [isGenerating, setIsGenerating] = useState(false)
+  const [editingRecipe, setEditingRecipe] = useState(null)
+  const [editingMealDay, setEditingMealDay] = useState(null)
 
   useEffect(() => {
     const saved = localStorage.getItem('mealPlannerRecipes')
@@ -69,6 +71,79 @@ export default function Home() {
       }
       saveRecipes(updatedRecipes)
     }
+  }
+
+  const startEditRecipe = (type, recipe) => {
+    setEditingRecipe({ ...recipe, type })
+    setRecipeName(recipe.name)
+    setRecipeLink(recipe.link || '')
+    setRecipeType(type)
+    setServingMultiplier(recipe.multiplier)
+    setManualIngredients(recipe.ingredients ? recipe.ingredients.join('\n') : '')
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  const updateRecipe = () => {
+    if (!editingRecipe) return
+    
+    const ingredientList = manualIngredients.trim() ? manualIngredients.split('\n').map(i => i.trim()).filter(Boolean) : null
+    
+    const updatedRecipe = {
+      ...editingRecipe,
+      name: recipeName,
+      link: recipeLink || null,
+      multiplier: servingMultiplier,
+      ingredients: ingredientList
+    }
+
+    const updatedRecipes = {
+      ...recipes,
+      [editingRecipe.type]: recipes[editingRecipe.type].map(r => 
+        r.id === editingRecipe.id ? updatedRecipe : r
+      )
+    }
+
+    saveRecipes(updatedRecipes)
+    cancelEdit()
+  }
+
+  const cancelEdit = () => {
+    setRecipeName('')
+    setRecipeLink('')
+    setRecipeType('adult')
+    setServingMultiplier(1)
+    setManualIngredients('')
+    setEditingRecipe(null)
+  }
+
+  const removeMealDay = (date) => {
+    if (confirm('Remove this day from the meal plan?')) {
+      setMealPlan(prev => prev.filter(day => day.date !== date))
+    }
+  }
+
+  const swapMealRecipe = (date, currentDinner) => {
+    const availableRecipes = recipes.adult.filter(r => r.name !== currentDinner)
+    if (availableRecipes.length === 0) {
+      alert('No other recipes available to swap')
+      return
+    }
+    setEditingMealDay(date)
+  }
+
+  const updateMealDay = (date, newRecipe) => {
+    setMealPlan(prev => prev.map(day => {
+      if (day.date === date) {
+        return {
+          ...day,
+          dinner: newRecipe.name,
+          dinnerLink: newRecipe.link,
+          category: newRecipe.link && newRecipe.link.includes('meat') ? 'meat' : 'carbs'
+        }
+      }
+      return day
+    }))
+    setEditingMealDay(null)
   }
 
   const generateMealPlan = async () => {
@@ -194,7 +269,14 @@ export default function Home() {
                 <textarea value={manualIngredients} onChange={(e) => setManualIngredients(e.target.value)} placeholder="One per line..." style={{ width: '100%', padding: '8px', border: '1px solid #ddd', borderRadius: '4px', minHeight: '100px' }} />
               </div>
 
-              <button onClick={addRecipe} style={{ background: '#667eea', color: 'white', padding: '12px 24px', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '500' }}>Add Recipe</button>
+              <button onClick={editingRecipe ? updateRecipe : addRecipe} style={{ background: editingRecipe ? '#ed8936' : '#667eea', color: 'white', padding: '12px 24px', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '500' }}>
+              {editingRecipe ? 'Update Recipe' : 'Add Recipe'}
+            </button>
+            {editingRecipe && (
+              <button onClick={cancelEdit} style={{ background: '#cbd5e0', color: '#2d3748', padding: '12px 24px', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '500', marginLeft: '8px' }}>
+                Cancel
+              </button>
+            )}
             </div>
 
             <div style={{ marginBottom: '24px' }}>
@@ -202,8 +284,11 @@ export default function Home() {
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '16px', marginTop: '16px' }}>
                 {recipes.adult.map(r => (
                   <div key={r.id} style={{ background: 'white', border: '1px solid #e0e0e0', borderRadius: '8px', padding: '16px', position: 'relative' }}>
-                    <button onClick={() => deleteRecipe('adult', r.id)} style={{ position: 'absolute', top: '12px', right: '12px', background: '#f56565', color: 'white', border: 'none', width: '28px', height: '28px', borderRadius: '50%', cursor: 'pointer' }}>×</button>
-                    <h3 style={{ marginBottom: '8px' }}>{r.name} {r.multiplier !== 1 && <span style={{ background: '#48bb78', color: 'white', fontSize: '11px', padding: '2px 8px', borderRadius: '12px', marginLeft: '8px' }}>{r.multiplier}x</span>}</h3>
+                    <div style={{ position: 'absolute', top: '12px', right: '12px', display: 'flex', gap: '4px' }}>
+                      <button onClick={() => startEditRecipe('adult', r)} style={{ background: '#ed8936', color: 'white', border: 'none', width: '28px', height: '28px', borderRadius: '50%', cursor: 'pointer', fontSize: '14px' }}>✏️</button>
+                      <button onClick={() => deleteRecipe('adult', r.id)} style={{ background: '#f56565', color: 'white', border: 'none', width: '28px', height: '28px', borderRadius: '50%', cursor: 'pointer' }}>×</button>
+                    </div>
+                    <h3 style={{ marginBottom: '8px', paddingRight: '60px' }}>{r.name} {r.multiplier !== 1 && <span style={{ background: '#48bb78', color: 'white', fontSize: '11px', padding: '2px 8px', borderRadius: '12px', marginLeft: '8px' }}>{r.multiplier}x</span>}</h3>
                     {r.link && <a href={r.link} target="_blank" style={{ color: '#667eea', fontSize: '13px', display: 'block', marginBottom: '8px' }}>🔗 View recipe</a>}
                     {r.ingredients && <div style={{ fontSize: '13px', color: '#666' }}>{r.ingredients.join(', ')}</div>}
                   </div>
@@ -228,19 +313,46 @@ export default function Home() {
               <div style={{ background: 'white', padding: '24px', borderRadius: '12px', marginBottom: '24px' }}>
                 <h2 style={{ marginBottom: '16px' }}>This Week\'s Meal Plan</h2>
                 {mealPlan.map(day => (
-                  <div key={day.date} style={{ padding: '16px', borderBottom: '1px solid #e0e0e0' }}>
-                    <h4 style={{ color: '#667eea', marginBottom: '8px' }}>{day.day} - {day.date}</h4>
-                    {day.away ? (
-                      <div style={{ color: '#999', fontStyle: 'italic' }}>Away - No meal planned</div>
-                    ) : (
-                      <div>
-                        <div style={{ marginBottom: '4px' }}>
-                          🍽️ Dinner: {day.dinnerLink ? <a href={day.dinnerLink} target="_blank" style={{ color: '#667eea' }}>{day.dinner}</a> : day.dinner}
-                          {day.category && <span style={{ marginLeft: '8px', fontSize: '11px', padding: '2px 8px', borderRadius: '10px', background: '#feebc8', color: '#7c2d12' }}>{day.category}</span>}
-                        </div>
-                        {day.babySnacks && <div style={{ fontSize: '14px' }}>👶 Baby: {day.babySnacks.join(', ')}</div>}
+                  <div key={day.date} style={{ padding: '16px', borderBottom: '1px solid #e0e0e0', position: 'relative' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                      <div style={{ flex: 1 }}>
+                        <h4 style={{ color: '#667eea', marginBottom: '8px' }}>{day.day} - {day.date}</h4>
+                        {day.away ? (
+                          <div style={{ color: '#999', fontStyle: 'italic' }}>Away - No meal planned</div>
+                        ) : editingMealDay === day.date ? (
+                          <div>
+                            <p style={{ marginBottom: '8px', fontSize: '14px', color: '#666' }}>Select a recipe:</p>
+                            <select 
+                              onChange={(e) => {
+                                const recipe = recipes.adult.find(r => r.name === e.target.value)
+                                if (recipe) updateMealDay(day.date, recipe)
+                              }}
+                              style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ddd', marginRight: '8px' }}
+                            >
+                              <option value="">Choose recipe...</option>
+                              {recipes.adult.filter(r => r.name !== day.dinner).map(r => (
+                                <option key={r.id} value={r.name}>{r.name}</option>
+                              ))}
+                            </select>
+                            <button onClick={() => setEditingMealDay(null)} style={{ padding: '6px 12px', background: '#cbd5e0', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Cancel</button>
+                          </div>
+                        ) : (
+                          <div>
+                            <div style={{ marginBottom: '4px' }}>
+                              🍽️ Dinner: {day.dinnerLink ? <a href={day.dinnerLink} target="_blank" style={{ color: '#667eea' }}>{day.dinner}</a> : day.dinner}
+                              {day.category && <span style={{ marginLeft: '8px', fontSize: '11px', padding: '2px 8px', borderRadius: '10px', background: '#feebc8', color: '#7c2d12' }}>{day.category}</span>}
+                            </div>
+                            {day.babySnacks && <div style={{ fontSize: '14px' }}>👶 Baby: {day.babySnacks.join(', ')}</div>}
+                          </div>
+                        )}
                       </div>
-                    )}
+                      {!day.away && editingMealDay !== day.date && (
+                        <div style={{ display: 'flex', gap: '4px', marginLeft: '8px' }}>
+                          <button onClick={() => swapMealRecipe(day.date, day.dinner)} style={{ background: '#ed8936', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}>Swap</button>
+                          <button onClick={() => removeMealDay(day.date)} style={{ background: '#f56565', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}>Remove</button>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
