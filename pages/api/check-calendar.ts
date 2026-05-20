@@ -1,7 +1,39 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { getServerSession } from 'next-auth/next'
 import { google } from 'googleapis'
-import NextAuth from '../auth/[...nextauth]'
+import GoogleProvider from 'next-auth/providers/google'
+
+const authOptions = {
+  providers: [
+    GoogleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+      authorization: {
+        params: {
+          scope: 'openid email profile https://www.googleapis.com/auth/calendar.readonly',
+          access_type: 'offline',
+          prompt: 'consent',
+        },
+      },
+    }),
+  ],
+  callbacks: {
+    async jwt({ token, account }: any) {
+      if (account) {
+        token.accessToken = account.access_token
+        token.refreshToken = account.refresh_token
+      }
+      return token
+    },
+    async session({ session, token }: any) {
+      if (token.accessToken) {
+        session.accessToken = token.accessToken as string
+      }
+      return session
+    },
+  },
+  secret: process.env.NEXTAUTH_SECRET,
+}
 
 export default async function handler(
   req: NextApiRequest,
@@ -11,7 +43,7 @@ export default async function handler(
     return res.status(405).json({ error: 'Method not allowed' })
   }
 
-  const session = await getServerSession(req, res, NextAuth)
+  const session = await getServerSession(req, res, authOptions)
   
   if (!session || !session.accessToken) {
     return res.status(401).json({ error: 'Not authenticated' })
