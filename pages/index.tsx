@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react'
 import Head from 'next/head'
 
 export default function Home() {
-  const { data: session } = useSession()
+  const { data: session, status } = useSession()
   const [recipes, setRecipes] = useState({ adult: [], babyRecipe: [], babySnack: [] })
   const [recipeName, setRecipeName] = useState('')
   const [recipeLink, setRecipeLink] = useState('')
@@ -140,10 +140,12 @@ export default function Home() {
           </div>
 
           <div style={{ padding: '32px' }}>
-            <div style={{ background: session ? '#c6f6d5' : '#bee3f8', padding: '16px', borderRadius: '8px', marginBottom: '24px', color: session ? '#22543d' : '#2c5282' }}>
-              {session ? (
+            <div style={{ background: session ? '#c6f6d5' : (status === 'loading' ? '#fef3c7' : '#bee3f8'), padding: '16px', borderRadius: '8px', marginBottom: '24px', color: session ? '#22543d' : (status === 'loading' ? '#78350f' : '#2c5282') }}>
+              {status === 'loading' ? (
+                <div>Checking connection...</div>
+              ) : session ? (
                 <div>
-                  ✓ Connected to Google Calendar as {session.user.email}
+                  ✓ Connected to Google Calendar as {session.user?.email}
                   <button onClick={() => signOut()} style={{ marginLeft: '16px', padding: '8px 16px', background: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Disconnect</button>
                 </div>
               ) : (
