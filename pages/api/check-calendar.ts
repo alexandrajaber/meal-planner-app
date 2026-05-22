@@ -1,39 +1,11 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
-import { getServerSession } from 'next-auth/next'
 import { google } from 'googleapis'
-import GoogleProvider from 'next-auth/providers/google'
+import { createClient } from '@supabase/supabase-js'
 
-const authOptions = {
-  providers: [
-    GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-      authorization: {
-        params: {
-          scope: 'openid email profile https://www.googleapis.com/auth/calendar.readonly',
-          access_type: 'offline',
-          prompt: 'consent',
-        },
-      },
-    }),
-  ],
-  callbacks: {
-    async jwt({ token, account }: any) {
-      if (account) {
-        token.accessToken = account.access_token
-        token.refreshToken = account.refresh_token
-      }
-      return token
-    },
-    async session({ session, token }: any) {
-      if (token.accessToken) {
-        session.accessToken = token.accessToken as string
-      }
-      return session
-    },
-  },
-  secret: process.env.NEXTAUTH_SECRET,
-}
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+)
 
 export default async function handler(
   req: NextApiRequest,
@@ -43,17 +15,24 @@ export default async function handler(
     return res.status(405).json({ error: 'Method not allowed' })
   }
 
-  const session = await getServerSession(req, res, authOptions)
-  
-  if (!session || !session.accessToken) {
-    return res.status(401).json({ error: 'Not authenticated' })
-  }
-
   const { startDate, endDate } = req.body
 
   try {
+    // Get the most recent calendar token from Supabase
+    const { data: tokenData, error: tokenError } = await supabase
+      .from('calendar_tokens')
+      .select('*')
+      .order('updated_at', { ascending: false })
+      .limit(1)
+      .single()
+    
+    if (tokenError || !tokenData) {
+      // No calendar connected - return empty away days
+      return res.status(200).json({ awayDays: [] })
+    }
+
     const oauth2Client = new google.auth.OAuth2()
-    oauth2Client.setCredentials({ access_token: session.accessToken })
+    oauth2Client.setCredentials({ access_token: tokenData.access_token })
 
     const calendar = google.calendar({ version: 'v3', auth: oauth2Client })
 
@@ -69,7 +48,7 @@ export default async function handler(
     
     // Look for events where BOTH people are away
     // Format: "Holiday: [Location]" = both away
-    // Format: "Holiday Alex: [Location]" or "Holiday Tony: [Location]" = one person away (still cook)
+    // Format: "Holiday Alex:" or "Holiday Tony:" = one person away (still cook)
     const awayDays = new Set<string>()
 
     events.forEach(event => {
@@ -93,6 +72,7 @@ export default async function handler(
     res.status(200).json({ awayDays: Array.from(awayDays) })
   } catch (error) {
     console.error('Calendar API error:', error)
-    res.status(500).json({ error: 'Failed to fetch calendar' })
+    // If calendar check fails, return empty array instead of erroring
+    res.status(200).json({ awayDays: [] })
   }
 }
