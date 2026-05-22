@@ -24,11 +24,13 @@ export default NextAuth({
   callbacks: {
     async jwt({ token, account, user }) {
       if (account && user?.email) {
+        console.log('🔵 JWT callback triggered for:', user.email)
         token.accessToken = account.access_token
         token.refreshToken = account.refresh_token
         
         // Save tokens to Supabase for shared access
         try {
+          console.log('🔵 Attempting to save token to Supabase...')
           const expiresIn: number = (account.expires_in as number) ?? 3600
           const expiresAt = new Date(Date.now() + expiresIn * 1000)
           
@@ -39,9 +41,11 @@ export default NextAuth({
             .eq('user_email', user.email)
             .single()
           
+          console.log('🔵 Existing token check:', existing ? 'Found' : 'Not found')
+          
           if (existing) {
             // Update existing token
-            await supabase
+            const { error } = await supabase
               .from('calendar_tokens')
               .update({
                 access_token: account.access_token,
@@ -50,9 +54,15 @@ export default NextAuth({
                 updated_at: new Date().toISOString()
               })
               .eq('user_email', user.email)
+            
+            if (error) {
+              console.error('🔴 Error updating token:', error)
+            } else {
+              console.log('✅ Token updated successfully')
+            }
           } else {
             // Insert new token
-            await supabase
+            const { error } = await supabase
               .from('calendar_tokens')
               .insert([{
                 user_email: user.email,
@@ -60,9 +70,15 @@ export default NextAuth({
                 refresh_token: account.refresh_token || null,
                 expires_at: expiresAt.toISOString()
               }])
+            
+            if (error) {
+              console.error('🔴 Error inserting token:', error)
+            } else {
+              console.log('✅ Token inserted successfully')
+            }
           }
         } catch (error) {
-          console.error('Error saving calendar token to Supabase:', error)
+          console.error('🔴 Error saving calendar token to Supabase:', error)
         }
       }
       return token
