@@ -235,14 +235,12 @@ export default function Home() {
       return
     }
 
-    if (!session) {
-      alert('Please connect your Google Calendar first')
-      return
-    }
-
     setIsGenerating(true)
 
     try {
+      let awayDays = []
+      
+      // Always try to check calendar - API will return empty array if no token
       const endDate = new Date(startDate)
       endDate.setDate(endDate.getDate() + 7)
 
@@ -255,7 +253,8 @@ export default function Home() {
         })
       })
 
-      const { awayDays } = await calendarRes.json()
+      const calendarData = await calendarRes.json()
+      awayDays = calendarData.awayDays || []
 
       const planRes = await fetch('/api/generate-meal-plan', {
         method: 'POST',
@@ -327,18 +326,18 @@ export default function Home() {
           </div>
 
           <div style={{ padding: '32px' }}>
-            <div style={{ background: session ? '#c6f6d5' : (status === 'loading' ? '#fef3c7' : '#bee3f8'), padding: '16px', borderRadius: '8px', marginBottom: '24px', color: session ? '#22543d' : (status === 'loading' ? '#78350f' : '#2c5282') }}>
+            <div style={{ background: session ? '#c6f6d5' : '#e6f7ff', padding: '16px', borderRadius: '8px', marginBottom: '24px', color: session ? '#22543d' : '#2c5282' }}>
               {status === 'loading' ? (
-                <div>Checking connection...</div>
+                <div>Checking calendar connection...</div>
               ) : session ? (
-                <div>
-                  ✓ Connected to Google Calendar as {session.user?.email}
-                  <button onClick={() => signOut()} style={{ marginLeft: '16px', padding: '8px 16px', background: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Disconnect</button>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                  <span>✓ Calendar connected as {session.user?.email}</span>
+                  <button onClick={() => signOut()} style={{ padding: '8px 16px', background: 'white', border: '1px solid #ddd', borderRadius: '4px', cursor: 'pointer' }}>Disconnect</button>
                 </div>
               ) : (
-                <div>
-                  Ready to connect to Google Calendar
-                  <button onClick={() => signIn('google')} style={{ marginLeft: '16px', padding: '8px 16px', background: '#667eea', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Connect Google Calendar</button>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                  <span>📅 Optional: Connect Google Calendar to skip "Holiday:" days</span>
+                  <button onClick={() => signIn('google')} style={{ padding: '8px 16px', background: '#667eea', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Connect Calendar</button>
                 </div>
               )}
             </div>
@@ -408,41 +407,44 @@ export default function Home() {
               </div>
             </div>
 
-            {session && (
-              <div style={{ background: 'white', padding: '24px', borderRadius: '12px', marginBottom: '24px' }}>
-                <h2 style={{ marginBottom: '16px' }}>Generate Weekly Meal Plan</h2>
-                <div style={{ marginBottom: '16px' }}>
-                  <label style={{ display: 'block', marginBottom: '4px', fontWeight: '500' }}>Start Date</label>
-                  <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} style={{ width: '100%', padding: '8px', border: '1px solid #ddd', borderRadius: '4px' }} />
-                </div>
-                <div style={{ marginBottom: '16px' }}>
-                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>Nursery Days (baby has lunch at nursery)</label>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                    {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map(day => (
-                      <label key={day} style={{ display: 'flex', alignItems: 'center', padding: '6px 12px', border: '1px solid #ddd', borderRadius: '6px', cursor: 'pointer', background: nurseryDays.includes(day) ? '#e6f7ff' : 'white' }}>
-                        <input 
-                          type="checkbox" 
-                          checked={nurseryDays.includes(day)} 
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setNurseryDays([...nurseryDays, day])
-                            } else {
-                              setNurseryDays(nurseryDays.filter(d => d !== day))
-                            }
-                          }}
-                          style={{ marginRight: '6px' }}
-                        />
-                        {day.slice(0, 3)}
-                      </label>
-                    ))}
-                  </div>
-                  <p style={{ fontSize: '12px', color: '#666', marginTop: '6px' }}>On nursery days, baby gets 1 evening meal. On other days, baby gets 2 meals.</p>
-                </div>
-                <button onClick={generateMealPlan} disabled={isGenerating} style={{ background: '#48bb78', color: 'white', padding: '12px 24px', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '500' }}>
-                  {isGenerating ? 'Generating...' : 'Generate Meal Plan & Shopping List'}
-                </button>
+            <div style={{ background: 'white', padding: '24px', borderRadius: '12px', marginBottom: '24px' }}>
+              <h2 style={{ marginBottom: '16px' }}>Generate Weekly Meal Plan</h2>
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{ display: 'block', marginBottom: '4px', fontWeight: '500' }}>Start Date</label>
+                <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} style={{ width: '100%', padding: '8px', border: '1px solid #ddd', borderRadius: '4px' }} />
               </div>
-            )}
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>Nursery Days (baby has lunch at nursery)</label>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                  {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map(day => (
+                    <label key={day} style={{ display: 'flex', alignItems: 'center', padding: '6px 12px', border: '1px solid #ddd', borderRadius: '6px', cursor: 'pointer', background: nurseryDays.includes(day) ? '#e6f7ff' : 'white' }}>
+                      <input 
+                        type="checkbox" 
+                        checked={nurseryDays.includes(day)} 
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setNurseryDays([...nurseryDays, day])
+                          } else {
+                            setNurseryDays(nurseryDays.filter(d => d !== day))
+                          }
+                        }}
+                        style={{ marginRight: '6px' }}
+                      />
+                      {day.slice(0, 3)}
+                    </label>
+                  ))}
+                </div>
+                <p style={{ fontSize: '12px', color: '#666', marginTop: '6px' }}>On nursery days, baby gets 1 evening meal. On other days, baby gets 2 meals.</p>
+              </div>
+              {!session && (
+                <div style={{ background: '#fff3cd', padding: '12px', borderRadius: '6px', marginBottom: '16px', fontSize: '14px', color: '#856404' }}>
+                  💡 Connect your Google Calendar above to automatically skip days marked as "Holiday:" in your calendar
+                </div>
+              )}
+              <button onClick={generateMealPlan} disabled={isGenerating} style={{ background: '#48bb78', color: 'white', padding: '12px 24px', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '500' }}>
+                {isGenerating ? 'Generating...' : 'Generate Meal Plan & Shopping List'}
+              </button>
+            </div>
 
             {mealPlan.length > 0 && (
               <div style={{ background: 'white', padding: '24px', borderRadius: '12px', marginBottom: '24px' }}>
