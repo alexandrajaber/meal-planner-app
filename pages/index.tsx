@@ -16,6 +16,50 @@ export default function Home() {
   const [isGenerating, setIsGenerating] = useState(false)
   const [editingRecipe, setEditingRecipe] = useState(null)
   const [editingMealDay, setEditingMealDay] = useState(null)
+  const [nurseryDays, setNurseryDays] = useState(['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'])
+  const [editingShoppingItem, setEditingShoppingItem] = useState(null)
+  const [newShoppingItem, setNewShoppingItem] = useState('')
+
+  const categorizeIngredients = (ingredients) => {
+    const categories = {
+      produce: ['onion', 'garlic', 'tomato', 'pepper', 'bell pepper', 'carrot', 'potato', 'lettuce', 'cucumber', 'spinach', 'broccoli', 'mushroom', 'courgette', 'aubergine', 'celery', 'leek'],
+      meat: ['beef', 'chicken', 'pork', 'lamb', 'turkey', 'sausage', 'bacon', 'mince', 'steak', 'chop'],
+      seafood: ['fish', 'salmon', 'tuna', 'prawn', 'shrimp', 'cod', 'haddock', 'mackerel'],
+      dairy: ['milk', 'cheese', 'butter', 'cream', 'yogurt', 'parmesan', 'mozzarella', 'cheddar', 'feta'],
+      grains: ['pasta', 'rice', 'bread', 'flour', 'gnocchi', 'noodles', 'quinoa', 'couscous'],
+      pantry: ['oil', 'salt', 'pepper', 'sugar', 'vinegar', 'sauce', 'seasoning', 'pesto', 'stock', 'spice', 'honey', 'cumin', 'paprika'],
+      canned: ['beans', 'tomatoes', 'tuna', 'chickpeas', 'corn', 'chopped tomatoes']
+    }
+
+    const categorized = { produce: [], meat: [], seafood: [], dairy: [], grains: [], canned: [], pantry: [], other: [] }
+
+    ingredients.forEach(ingredient => {
+      const lower = ingredient.toLowerCase()
+      let found = false
+      
+      for (const [category, keywords] of Object.entries(categories)) {
+        if (keywords.some(keyword => lower.includes(keyword))) {
+          categorized[category].push(ingredient)
+          found = true
+          break
+        }
+      }
+      
+      if (!found) categorized.other.push(ingredient)
+    })
+
+    // Return flat array in category order (no titles, just grouped)
+    return [
+      ...categorized.produce,
+      ...categorized.meat,
+      ...categorized.seafood,
+      ...categorized.dairy,
+      ...categorized.grains,
+      ...categorized.canned,
+      ...categorized.pantry,
+      ...categorized.other
+    ].filter(Boolean)
+  }
 
   useEffect(() => {
     const saved = localStorage.getItem('mealPlannerRecipes')
@@ -180,13 +224,15 @@ export default function Home() {
         body: JSON.stringify({
           recipes,
           awayDays,
-          startDate
+          startDate,
+          nurseryDays
         })
       })
 
       const { mealPlan, shoppingList } = await planRes.json()
       setMealPlan(mealPlan)
-      setShoppingList(shoppingList)
+      // Apply smart categorization to shopping list
+      setShoppingList(categorizeIngredients(shoppingList))
     } catch (error) {
       alert('Failed to generate meal plan: ' + error.message)
     } finally {
@@ -195,9 +241,36 @@ export default function Home() {
   }
 
   const copyShoppingList = () => {
-    const text = shoppingList.join('\n')
+    const text = shoppingList.map(item => `☐ ${item}`).join('\n')
     navigator.clipboard.writeText(text)
     alert('Shopping list copied! Paste it into Google Keep.')
+  }
+
+  const removeShoppingItem = (index) => {
+    setShoppingList(prev => prev.filter((_, i) => i !== index))
+  }
+
+  const startEditShoppingItem = (index, item) => {
+    setEditingShoppingItem(index)
+    setNewShoppingItem(item)
+  }
+
+  const updateShoppingItem = (index) => {
+    if (!newShoppingItem.trim()) {
+      removeShoppingItem(index)
+      setEditingShoppingItem(null)
+      setNewShoppingItem('')
+      return
+    }
+    setShoppingList(prev => prev.map((item, i) => i === index ? newShoppingItem : item))
+    setEditingShoppingItem(null)
+    setNewShoppingItem('')
+  }
+
+  const addShoppingItem = () => {
+    if (!newShoppingItem.trim()) return
+    setShoppingList(prev => [...prev, newShoppingItem])
+    setNewShoppingItem('')
   }
 
   return (
@@ -303,6 +376,29 @@ export default function Home() {
                   <label style={{ display: 'block', marginBottom: '4px', fontWeight: '500' }}>Start Date</label>
                   <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} style={{ width: '100%', padding: '8px', border: '1px solid #ddd', borderRadius: '4px' }} />
                 </div>
+                <div style={{ marginBottom: '16px' }}>
+                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>Nursery Days (baby has lunch at nursery)</label>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                    {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map(day => (
+                      <label key={day} style={{ display: 'flex', alignItems: 'center', padding: '6px 12px', border: '1px solid #ddd', borderRadius: '6px', cursor: 'pointer', background: nurseryDays.includes(day) ? '#e6f7ff' : 'white' }}>
+                        <input 
+                          type="checkbox" 
+                          checked={nurseryDays.includes(day)} 
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setNurseryDays([...nurseryDays, day])
+                            } else {
+                              setNurseryDays(nurseryDays.filter(d => d !== day))
+                            }
+                          }}
+                          style={{ marginRight: '6px' }}
+                        />
+                        {day.slice(0, 3)}
+                      </label>
+                    ))}
+                  </div>
+                  <p style={{ fontSize: '12px', color: '#666', marginTop: '6px' }}>On nursery days, baby gets 1 evening meal. On other days, baby gets 2 meals.</p>
+                </div>
                 <button onClick={generateMealPlan} disabled={isGenerating} style={{ background: '#48bb78', color: 'white', padding: '12px 24px', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '500' }}>
                   {isGenerating ? 'Generating...' : 'Generate Meal Plan & Shopping List'}
                 </button>
@@ -363,11 +459,50 @@ export default function Home() {
                 <h2 style={{ marginBottom: '16px' }}>Shopping List</h2>
                 <ul style={{ listStyle: 'none', padding: 0 }}>
                   {shoppingList.map((item, i) => (
-                    <li key={i} style={{ padding: '8px 0', borderBottom: '1px solid #f0f0f0' }}>{item}</li>
+                    <li key={i} style={{ padding: '8px 0', borderBottom: '1px solid #f0f0f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      {editingShoppingItem === i ? (
+                        <div style={{ flex: 1, display: 'flex', gap: '8px' }}>
+                          <input 
+                            type="text" 
+                            value={newShoppingItem} 
+                            onChange={(e) => setNewShoppingItem(e.target.value)}
+                            onKeyPress={(e) => e.key === 'Enter' && updateShoppingItem(i)}
+                            style={{ flex: 1, padding: '6px 8px', border: '1px solid #ddd', borderRadius: '4px' }}
+                            autoFocus
+                          />
+                          <button onClick={() => updateShoppingItem(i)} style={{ padding: '6px 12px', background: '#48bb78', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Save</button>
+                          <button onClick={() => { setEditingShoppingItem(null); setNewShoppingItem('') }} style={{ padding: '6px 12px', background: '#cbd5e0', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Cancel</button>
+                        </div>
+                      ) : (
+                        <>
+                          <span>{item}</span>
+                          <div style={{ display: 'flex', gap: '4px' }}>
+                            <button onClick={() => startEditShoppingItem(i, item)} style={{ background: '#ed8936', color: 'white', border: 'none', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}>✏️ Edit</button>
+                            <button onClick={() => removeShoppingItem(i)} style={{ background: '#f56565', color: 'white', border: 'none', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}>× Remove</button>
+                          </div>
+                        </>
+                      )}
+                    </li>
                   ))}
                 </ul>
-                <button onClick={copyShoppingList} style={{ marginTop: '16px', background: '#48bb78', color: 'white', padding: '12px 24px', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '500' }}>
-                  📋 Copy to Clipboard
+                
+                <div style={{ marginTop: '16px', padding: '16px', background: '#f7fafc', borderRadius: '8px' }}>
+                  <h3 style={{ fontSize: '14px', marginBottom: '8px', fontWeight: '500' }}>Add Item</h3>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <input 
+                      type="text" 
+                      value={newShoppingItem} 
+                      onChange={(e) => setNewShoppingItem(e.target.value)}
+                      onKeyPress={(e) => e.key === 'Enter' && addShoppingItem()}
+                      placeholder="e.g., Milk 1L"
+                      style={{ flex: 1, padding: '8px', border: '1px solid #ddd', borderRadius: '4px' }}
+                    />
+                    <button onClick={addShoppingItem} style={{ padding: '8px 16px', background: '#667eea', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: '500' }}>Add</button>
+                  </div>
+                </div>
+
+                <button onClick={copyShoppingList} style={{ marginTop: '16px', background: '#48bb78', color: 'white', padding: '12px 24px', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '500', width: '100%' }}>
+                  📋 Copy to Clipboard (Google Keep format)
                 </button>
               </div>
             )}
