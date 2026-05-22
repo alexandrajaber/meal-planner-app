@@ -100,7 +100,7 @@ export default async function handler(
             babyMealsList.push(babyMeal.name)
             
             // Add baby meal ingredients to shopping list
-            if (babyMeal.ingredients) {
+            if (babyMeal.ingredients && Array.isArray(babyMeal.ingredients)) {
               babyMeal.ingredients.forEach(ingredient => {
                 const key = ingredient.toLowerCase()
                 if (!shoppingList[key]) {
@@ -122,7 +122,7 @@ export default async function handler(
             babySnacksList.push(snack.name)
             
             // Add snack ingredients to shopping list
-            if (snack.ingredients) {
+            if (snack.ingredients && Array.isArray(snack.ingredients)) {
               snack.ingredients.forEach(ingredient => {
                 const key = ingredient.toLowerCase()
                 if (!shoppingList[key]) {
@@ -148,7 +148,7 @@ export default async function handler(
         })
         
         // Add adult recipe ingredients to shopping list
-        if (recipe.ingredients) {
+        if (recipe.ingredients && Array.isArray(recipe.ingredients)) {
           recipe.ingredients.forEach(ingredient => {
             const key = ingredient.toLowerCase()
             if (!shoppingList[key]) {
