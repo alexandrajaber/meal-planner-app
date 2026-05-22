@@ -1,6 +1,12 @@
 import { useSession, signIn, signOut } from 'next-auth/react'
 import { useState, useEffect } from 'react'
 import Head from 'next/head'
+import { createClient } from '@supabase/supabase-js'
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+)
 
 export default function Home() {
   const { data: session, status } = useSession()
@@ -62,19 +68,34 @@ export default function Home() {
   }
 
   useEffect(() => {
-    const saved = localStorage.getItem('mealPlannerRecipes')
-    if (saved) {
-      setRecipes(JSON.parse(saved))
-    }
+    loadRecipes()
     setStartDate(new Date().toISOString().split('T')[0])
   }, [])
 
-  const saveRecipes = (newRecipes) => {
-    localStorage.setItem('mealPlannerRecipes', JSON.stringify(newRecipes))
-    setRecipes(newRecipes)
+  const loadRecipes = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('recipes')
+        .select('*')
+        .order('created_at', { ascending: true })
+      
+      if (error) throw error
+      
+      // Group recipes by type
+      const grouped = { adult: [], babyRecipe: [], babySnack: [] }
+      data?.forEach(recipe => {
+        if (grouped[recipe.type]) {
+          grouped[recipe.type].push(recipe)
+        }
+      })
+      
+      setRecipes(grouped)
+    } catch (error) {
+      console.error('Error loading recipes:', error)
+    }
   }
 
-  const addRecipe = () => {
+  const addRecipe = async () => {
     if (!recipeName) {
       alert('Please enter a recipe name')
       return
@@ -87,33 +108,46 @@ export default function Home() {
 
     const ingredientList = manualIngredients.split('\n').map(i => i.trim()).filter(i => i.length > 0)
 
-    const newRecipe = {
-      id: Date.now(),
-      name: recipeName,
-      link: recipeLink || null,
-      multiplier: servingMultiplier,
-      ingredients: ingredientList.length > 0 ? ingredientList : null
+    try {
+      const { error } = await supabase
+        .from('recipes')
+        .insert([{
+          name: recipeName,
+          type: recipeType,
+          link: recipeLink || null,
+          multiplier: servingMultiplier,
+          ingredients: ingredientList.length > 0 ? ingredientList : null
+        }])
+      
+      if (error) throw error
+      
+      await loadRecipes()
+      
+      setRecipeName('')
+      setRecipeLink('')
+      setManualIngredients('')
+      setServingMultiplier(1)
+    } catch (error) {
+      console.error('Error adding recipe:', error)
+      alert('Failed to add recipe')
     }
-
-    const updatedRecipes = {
-      ...recipes,
-      [recipeType]: [...recipes[recipeType], newRecipe]
-    }
-
-    saveRecipes(updatedRecipes)
-    setRecipeName('')
-    setRecipeLink('')
-    setManualIngredients('')
-    setServingMultiplier(1)
   }
 
-  const deleteRecipe = (type, id) => {
+  const deleteRecipe = async (type, id) => {
     if (confirm('Delete this recipe?')) {
-      const updatedRecipes = {
-        ...recipes,
-        [type]: recipes[type].filter(r => r.id !== id)
+      try {
+        const { error } = await supabase
+          .from('recipes')
+          .delete()
+          .eq('id', id)
+        
+        if (error) throw error
+        
+        await loadRecipes()
+      } catch (error) {
+        console.error('Error deleting recipe:', error)
+        alert('Failed to delete recipe')
       }
-      saveRecipes(updatedRecipes)
     }
   }
 
@@ -127,28 +161,30 @@ export default function Home() {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
-  const updateRecipe = () => {
+  const updateRecipe = async () => {
     if (!editingRecipe) return
     
     const ingredientList = manualIngredients.trim() ? manualIngredients.split('\n').map(i => i.trim()).filter(Boolean) : null
     
-    const updatedRecipe = {
-      ...editingRecipe,
-      name: recipeName,
-      link: recipeLink || null,
-      multiplier: servingMultiplier,
-      ingredients: ingredientList
+    try {
+      const { error } = await supabase
+        .from('recipes')
+        .update({
+          name: recipeName,
+          link: recipeLink || null,
+          multiplier: servingMultiplier,
+          ingredients: ingredientList
+        })
+        .eq('id', editingRecipe.id)
+      
+      if (error) throw error
+      
+      await loadRecipes()
+      cancelEdit()
+    } catch (error) {
+      console.error('Error updating recipe:', error)
+      alert('Failed to update recipe')
     }
-
-    const updatedRecipes = {
-      ...recipes,
-      [editingRecipe.type]: recipes[editingRecipe.type].map(r => 
-        r.id === editingRecipe.id ? updatedRecipe : r
-      )
-    }
-
-    saveRecipes(updatedRecipes)
-    cancelEdit()
   }
 
   const cancelEdit = () => {
