@@ -157,7 +157,10 @@ export default function Home() {
     setRecipeLink(recipe.link || '')
     setRecipeType(type)
     setServingMultiplier(recipe.multiplier)
-    setManualIngredients(recipe.ingredients ? recipe.ingredients.join('\n') : '')
+    const ingredientsText = recipe.ingredients 
+      ? (Array.isArray(recipe.ingredients) ? recipe.ingredients.join('\n') : recipe.ingredients)
+      : ''
+    setManualIngredients(ingredientsText)
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
@@ -399,7 +402,7 @@ export default function Home() {
                     </div>
                     <h3 style={{ marginBottom: '8px', paddingRight: '60px' }}>{r.name} {r.multiplier !== 1 && <span style={{ background: '#48bb78', color: 'white', fontSize: '11px', padding: '2px 8px', borderRadius: '12px', marginLeft: '8px' }}>{r.multiplier}x</span>}</h3>
                     {r.link && <a href={r.link} target="_blank" style={{ color: '#667eea', fontSize: '13px', display: 'block', marginBottom: '8px' }}>🔗 View recipe</a>}
-                    {r.ingredients && <div style={{ fontSize: '13px', color: '#666' }}>{r.ingredients.join(', ')}</div>}
+                    {r.ingredients && <div style={{ fontSize: '13px', color: '#666' }}>{Array.isArray(r.ingredients) ? r.ingredients.join(', ') : r.ingredients}</div>}
                   </div>
                 ))}
               </div>
