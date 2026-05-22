@@ -22,6 +22,7 @@ type MealPlanDay = {
 // Detect meal category based on ingredients
 function detectCategory(ingredients: string[] | null): string {
   if (!ingredients) return 'other'
+  if (!Array.isArray(ingredients)) return 'other'
   
   const ingredientsText = ingredients.join(' ').toLowerCase()
   
