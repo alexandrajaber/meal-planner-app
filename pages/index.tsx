@@ -27,6 +27,12 @@ export default function Home() {
   const [newShoppingItem, setNewShoppingItem] = useState('')
 
   const categorizeIngredients = (ingredients) => {
+    // Safety check - ensure ingredients is an array
+    if (!Array.isArray(ingredients)) {
+      console.error('categorizeIngredients received non-array:', ingredients)
+      return []
+    }
+    
     const categories = {
       produce: ['onion', 'garlic', 'tomato', 'pepper', 'bell pepper', 'carrot', 'potato', 'lettuce', 'cucumber', 'spinach', 'broccoli', 'mushroom', 'courgette', 'aubergine', 'celery', 'leek'],
       meat: ['beef', 'chicken', 'pork', 'lamb', 'turkey', 'sausage', 'bacon', 'mince', 'steak', 'chop'],
