@@ -15,7 +15,22 @@ type MealPlanDay = {
   dinner?: string
   dinnerLink?: string
   category?: string
+  babyMeals?: string[]
   babySnacks?: string[]
+}
+
+// Detect meal category based on ingredients
+function detectCategory(ingredients: string[] | null): string {
+  if (!ingredients) return 'other'
+  
+  const ingredientsText = ingredients.join(' ').toLowerCase()
+  
+  if (ingredientsText.match(/beef|chicken|pork|lamb|turkey|sausage|bacon|mince/)) return 'meat'
+  if (ingredientsText.match(/fish|salmon|tuna|prawn|shrimp|cod|haddock/)) return 'seafood'
+  if (ingredientsText.match(/pasta|rice|gnocchi|noodles/)) return 'carbs'
+  if (ingredientsText.match(/bean|lentil|chickpea|tofu/) && !ingredientsText.match(/beef|chicken|pork|fish/)) return 'vegetarian'
+  
+  return 'other'
 }
 
 export default async function handler(
@@ -26,7 +41,7 @@ export default async function handler(
     return res.status(405).json({ error: 'Method not allowed' })
   }
 
-  const { recipes, awayDays, startDate } = req.body
+  const { recipes, awayDays, startDate, nurseryDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'] } = req.body
 
   try {
     const mealPlan: MealPlanDay[] = []
@@ -42,6 +57,8 @@ export default async function handler(
     
     // Create balanced meal rotation
     let recipeIndex = 0
+    let babyMealIndex = 0
+    let babySnackIndex = 0
     
     for (let i = 0; i < 7; i++) {
       const currentDate = new Date(start)
@@ -49,7 +66,8 @@ export default async function handler(
       const dateStr = currentDate.toISOString().split('T')[0]
       const dayName = dayNames[currentDate.getDay()]
       
-      const isAway = awayDays.includes(dateStr)
+      // Check if this is an away day
+      const isAway = awayDays.some((day: string) => day === dateStr)
       
       if (isAway) {
         mealPlan.push({
@@ -57,32 +75,64 @@ export default async function handler(
           day: dayName,
           away: true
         })
-      } else {
-        // Select recipe in rotation
+        continue
+      }
+      
+      // Select dinner recipe
+      if (adultRecipes.length > 0) {
         const recipe = adultRecipes[recipeIndex % adultRecipes.length]
         recipeIndex++
         
-        // Determine category based on recipe name (simple heuristic)
-        let category = 'meat'
-        const name = recipe.name.toLowerCase()
-        if (name.includes('fish') || name.includes('salmon') || name.includes('tuna') || name.includes('cod')) {
-          category = 'fish'
-        } else if (name.includes('veggie') || name.includes('vegetarian') || name.includes('vegan')) {
-          category = 'veggie'
-        } else if (name.includes('pasta') || name.includes('rice') || name.includes('noodle')) {
-          category = 'carbs'
+        // Detect category from ingredients
+        const category = detectCategory(recipe.ingredients)
+        
+        // BABY MEALS LOGIC
+        const isWeekend = dayName === 'Saturday' || dayName === 'Sunday'
+        const isNurseryDay = nurseryDays.includes(dayName)
+        
+        // Baby meals: 2 on weekends or non-nursery days, 1 on nursery days
+        const numBabyMeals = (isWeekend || !isNurseryDay) ? 2 : 1
+        const babyMealsList: string[] = []
+        
+        if (babyRecipes.length > 0) {
+          for (let m = 0; m < numBabyMeals; m++) {
+            const babyMeal = babyRecipes[babyMealIndex % babyRecipes.length]
+            babyMealsList.push(babyMeal.name)
+            
+            // Add baby meal ingredients to shopping list
+            if (babyMeal.ingredients) {
+              babyMeal.ingredients.forEach(ingredient => {
+                const key = ingredient.toLowerCase()
+                if (!shoppingList[key]) {
+                  shoppingList[key] = ingredient
+                }
+              })
+            }
+            
+            // Rotate baby meals slowly (can repeat 2-3 days)
+            if (i % 2 === 1) babyMealIndex++
+          }
         }
         
-        // Select 1-2 baby snacks
-        const selectedBabySnacks = []
+        // BABY SNACKS LOGIC: Always 2 per day
+        const babySnacksList: string[] = []
         if (babySnacks.length > 0) {
-          const snack1 = babySnacks[i % babySnacks.length]
-          selectedBabySnacks.push(snack1.name)
-          if (babySnacks.length > 1) {
-            const snack2 = babySnacks[(i + 1) % babySnacks.length]
-            if (snack2.id !== snack1.id) {
-              selectedBabySnacks.push(snack2.name)
+          for (let s = 0; s < 2; s++) {
+            const snack = babySnacks[babySnackIndex % babySnacks.length]
+            babySnacksList.push(snack.name)
+            
+            // Add snack ingredients to shopping list
+            if (snack.ingredients) {
+              snack.ingredients.forEach(ingredient => {
+                const key = ingredient.toLowerCase()
+                if (!shoppingList[key]) {
+                  shoppingList[key] = ingredient
+                }
+              })
             }
+            
+            // Rotate snacks slowly (can repeat multiple days)
+            if (s === 1 && i % 3 === 2) babySnackIndex++
           }
         }
         
@@ -92,32 +142,19 @@ export default async function handler(
           away: false,
           dinner: recipe.name,
           dinnerLink: recipe.link || undefined,
-          category: category,
-          babySnacks: selectedBabySnacks.length > 0 ? selectedBabySnacks : undefined
+          category,
+          babyMeals: babyMealsList.length > 0 ? babyMealsList : undefined,
+          babySnacks: babySnacksList.length > 0 ? babySnacksList : undefined
         })
         
-        // Add ingredients to shopping list
+        // Add adult recipe ingredients to shopping list
         if (recipe.ingredients) {
           recipe.ingredients.forEach(ingredient => {
-            // Simple aggregation - just add to list
             const key = ingredient.toLowerCase()
             if (!shoppingList[key]) {
               shoppingList[key] = ingredient
             }
           })
-        }
-        
-        // Add baby recipe ingredients if selected
-        if (babyRecipes.length > 0) {
-          const babyRecipe = babyRecipes[i % babyRecipes.length]
-          if (babyRecipe.ingredients) {
-            babyRecipe.ingredients.forEach(ingredient => {
-              const key = ingredient.toLowerCase()
-              if (!shoppingList[key]) {
-                shoppingList[key] = ingredient
-              }
-            })
-          }
         }
       }
     }
