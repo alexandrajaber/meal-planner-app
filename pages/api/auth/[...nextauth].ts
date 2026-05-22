@@ -29,7 +29,7 @@ export default NextAuth({
         
         // Save tokens to Supabase for shared access
         try {
-          const expiresIn = account.expires_in ?? 3600
+          const expiresIn: number = (account.expires_in as number) ?? 3600
           const expiresAt = new Date(Date.now() + expiresIn * 1000)
           
           // Check if token already exists for this user
