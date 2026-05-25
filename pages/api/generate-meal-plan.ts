@@ -80,6 +80,32 @@ function convertToMetric(ingredient: string): string {
   return ingredient
 }
 
+// Multiply ingredient quantities
+function multiplyIngredient(ingredient: string, multiplier: number): string {
+  if (multiplier === 1) return ingredient
+  
+  // Match numbers with units (g, ml, L, kg)
+  ingredient = ingredient.replace(/(\d+(?:\.\d+)?)\s*(g|ml|L|kg)/gi, (match, num, unit) => {
+    const amount = parseFloat(num) * multiplier
+    // Convert to larger unit if needed
+    if (unit.toLowerCase() === 'g' && amount >= 1000) {
+      return `${(amount / 1000).toFixed(1)}kg`
+    }
+    if (unit.toLowerCase() === 'ml' && amount >= 1000) {
+      return `${(amount / 1000).toFixed(1)}L`
+    }
+    return `${Math.round(amount)}${unit}`
+  })
+  
+  // Match plain numbers at the start (e.g., "4 cloves garlic")
+  ingredient = ingredient.replace(/^(\d+(?:\.\d+)?)\s+/,  (match, num) => {
+    const amount = parseFloat(num) * multiplier
+    return `${Math.round(amount)} `
+  })
+  
+  return ingredient
+}
+
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
@@ -88,7 +114,7 @@ export default async function handler(
     return res.status(405).json({ error: 'Method not allowed' })
   }
 
-  const { recipes, awayDays, startDate, nurseryDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'] } = req.body
+  const { recipes, awayDays, startDate, nurseryDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'], weekMultiplier = 1 } = req.body
 
   try {
     const mealPlan: MealPlanDay[] = []
@@ -244,9 +270,10 @@ export default async function handler(
         if (recipe.ingredients && Array.isArray(recipe.ingredients)) {
           recipe.ingredients.forEach(ingredient => {
             const converted = convertToMetric(ingredient)
-            const key = converted.toLowerCase()
+            const multiplied = multiplyIngredient(converted, recipe.multiplier * weekMultiplier)
+            const key = multiplied.toLowerCase()
             if (!shoppingList[key]) {
-              shoppingList[key] = converted
+              shoppingList[key] = multiplied
             }
           })
         }
