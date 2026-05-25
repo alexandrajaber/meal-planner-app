@@ -56,6 +56,22 @@ export default async function handler(
     const babyRecipes: Recipe[] = recipes.babyRecipe || []
     const babySnacks: Recipe[] = recipes.babySnack || []
     
+    // Parse ingredients if they're JSON strings (from Supabase text[] columns)
+    const parseIngredients = (recipe: Recipe): Recipe => {
+      if (recipe.ingredients && typeof recipe.ingredients === 'string') {
+        try {
+          recipe.ingredients = JSON.parse(recipe.ingredients as any)
+        } catch (e) {
+          console.error('Failed to parse ingredients:', e)
+        }
+      }
+      return recipe
+    }
+    
+    adultRecipes.forEach(parseIngredients)
+    babyRecipes.forEach(parseIngredients)
+    babySnacks.forEach(parseIngredients)
+    
     // Create balanced meal rotation
     let recipeIndex = 0
     let babyMealIndex = 0
