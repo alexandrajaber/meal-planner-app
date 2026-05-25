@@ -171,10 +171,16 @@ export default async function handler(
     babyRecipes.forEach(parseIngredients)
     babySnacks.forEach(parseIngredients)
     
-    // Create balanced meal rotation
+    // Create balanced meal rotation - cook 2-3 times per week
+    // Each recipe covers multiple days based on its multiplier
+    // multiplier 1 = 1 day, multiplier 2 = 2 days, multiplier 3 = 3 days
     let recipeIndex = 0
     let babyMealIndex = 0
     let babySnackIndex = 0
+    
+    let currentRecipeDay = 0
+    let currentRecipe: Recipe | null = null
+    let daysRemainingForRecipe = 0
     
     for (let i = 0; i < 7; i++) {
       const currentDate = new Date(start)
@@ -191,16 +197,34 @@ export default async function handler(
           day: dayName,
           away: true
         })
+        // Reset recipe counter if we're away
+        daysRemainingForRecipe = 0
+        currentRecipe = null
         continue
       }
       
-      // Select dinner recipe
+      // Select dinner recipe - pick a new one only when needed
       if (adultRecipes.length > 0) {
-        const recipe = adultRecipes[recipeIndex % adultRecipes.length]
-        console.log('🔵 Selected recipe:', recipe.name)
-        console.log('🔵 Recipe ingredients:', recipe.ingredients)
-        console.log('🔵 Is array?', Array.isArray(recipe.ingredients))
-        recipeIndex++
+        // Do we need a new recipe?
+        if (daysRemainingForRecipe === 0 || !currentRecipe) {
+          currentRecipe = adultRecipes[recipeIndex % adultRecipes.length]
+          console.log('🔵 Selected recipe:', currentRecipe.name)
+          console.log('🔵 Recipe ingredients:', currentRecipe.ingredients)
+          console.log('🔵 Is array?', Array.isArray(currentRecipe.ingredients))
+          recipeIndex++
+          
+          // Calculate days covered: servings ÷ 2 (assuming 2 people eating)
+          // 2 servings = 1 day, 4 servings = 2 days, 6 servings = 3 days
+          const servings = currentRecipe.multiplier || 2
+          daysRemainingForRecipe = Math.max(1, Math.round(servings / 2))
+          currentRecipeDay = 0
+          
+          console.log(`🔵 Recipe has ${servings} servings → covers ${daysRemainingForRecipe} days`)
+        }
+        
+        const recipe = currentRecipe
+        currentRecipeDay++
+        daysRemainingForRecipe--
         
         // Detect category from ingredients
         const category = detectCategory(recipe.ingredients)
@@ -262,12 +286,14 @@ export default async function handler(
           dinner: recipe.name,
           dinnerLink: recipe.link || undefined,
           category,
+          isLeftover: currentRecipeDay > 1,
+          leftoverDay: currentRecipeDay,
           babyMeals: babyMealsList.length > 0 ? babyMealsList : undefined,
           babySnacks: babySnacksList.length > 0 ? babySnacksList : undefined
         })
         
-        // Add adult recipe ingredients to shopping list
-        if (recipe.ingredients && Array.isArray(recipe.ingredients)) {
+        // Add adult recipe ingredients to shopping list ONLY on the first day
+        if (currentRecipeDay === 1 && recipe.ingredients && Array.isArray(recipe.ingredients)) {
           recipe.ingredients.forEach(ingredient => {
             const converted = convertToMetric(ingredient)
             const dayMultiplier = dayMultipliers[dateStr] || 1
