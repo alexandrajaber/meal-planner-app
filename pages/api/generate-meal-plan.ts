@@ -143,29 +143,45 @@ export default async function handler(
           }
           
           // If it's an array with a single long string, split by commas
-          if (Array.isArray(parsed) && parsed.length === 1 && parsed[0].includes('","')) {
-            // This is a single string with comma-separated items
-            const singleString = parsed[0]
-            parsed = singleString.split('","').map((s: string) => s.replace(/^\[?"/, '').replace(/"\]?$/, ''))
+          if (Array.isArray(parsed) && parsed.length === 1 && typeof parsed[0] === 'string') {
+            const str = parsed[0]
+            // Check if it's a mega-string with "," patterns
+            if (str.includes('","') || str.includes('","')) {
+              parsed = str.split(/","|","/).map((s: string) => 
+                s.replace(/^\[?"/, '').replace(/"\]?$/, '').trim()
+              )
+            }
           }
           
-          // Clean up checkbox symbols, escaped quotes, and trim
+          // Clean up each item
           if (Array.isArray(parsed)) {
             parsed = parsed.map((item: string) => {
               if (typeof item !== 'string') return String(item)
               
-              // Remove escaped quotes and backslashes
-              return item
-                .replace(/^▢\s*/, '')
-                .replace(/^\[\s*"/, '')
-                .replace(/"\s*\]$/, '')
-                .replace(/\\\\/g, '')  // Remove double backslashes
-                .replace(/\\"/g, '"')  // Unescape quotes
-                .replace(/\\n/g, '')   // Remove newline escapes
-                .replace(/\[\\"/g, '')  // Remove [\" patterns
-                .replace(/\\"\]/g, '')  // Remove \"] patterns
+              // Remove all escape patterns and clean up
+              let cleaned = item
+                .replace(/^▢\s*/, '')                    // Remove checkbox
+                .replace(/^\[\s*"*/, '')                 // Remove opening ["
+                .replace(/"*\s*\]$/, '')                 // Remove closing "]
+                .replace(/\\\\/g, '')                    // Remove double backslashes
+                .replace(/\\"/g, '"')                    // Unescape quotes
+                .replace(/\\n/g, '')                     // Remove newline escapes
+                .replace(/\[\\"/g, '')                   // Remove [\" patterns
+                .replace(/\\"\]/g, '')                   // Remove \"] patterns
+                .replace(/^\["/, '')                     // Remove ["
+                .replace(/"\]$/, '')                     // Remove "]
+                .replace(/^"/, '')                       // Remove leading quote
+                .replace(/"$/, '')                       // Remove trailing quote
                 .trim()
-            }).filter((item: string) => item.length > 0)
+              
+              // If still has weird patterns, try splitting by common separators
+              if (cleaned.includes('","') && !cleaned.match(/^\d+/)) {
+                // This looks like multiple items mashed together
+                return cleaned.split('","').map(s => s.replace(/"/g, '').trim())
+              }
+              
+              return cleaned
+            }).flat().filter((item: string) => item.length > 0 && !item.match(/^[\[\]"\\]+$/))
           }
           
           recipe.ingredients = parsed
@@ -177,15 +193,26 @@ export default async function handler(
         recipe.ingredients = recipe.ingredients.map((item: string) => {
           if (typeof item !== 'string') return String(item)
           
-          return item
+          let cleaned = item
             .replace(/^▢\s*/, '')
             .replace(/\\\\/g, '')
             .replace(/\\"/g, '"')
             .replace(/\\n/g, '')
             .replace(/\[\\"/g, '')
             .replace(/\\"\]/g, '')
+            .replace(/^\["/, '')
+            .replace(/"\]$/, '')
+            .replace(/^"/, '')
+            .replace(/"$/, '')
             .trim()
-        }).filter((item: string) => item.length > 0)
+          
+          // Split if it looks like multiple items
+          if (cleaned.includes('","') && !cleaned.match(/^\d+/)) {
+            return cleaned.split('","').map(s => s.replace(/"/g, '').trim())
+          }
+          
+          return cleaned
+        }).flat().filter((item: string) => item.length > 0)
       }
       return recipe
     }
@@ -280,11 +307,12 @@ export default async function handler(
           }
         }
         
-        // BABY SNACKS LOGIC: Always 2 per day
+        // BABY SNACKS LOGIC: Always 2 different snacks per day
         const babySnacksList: string[] = []
         if (babySnacks.length > 0) {
+          // Pick 2 different snacks
           for (let s = 0; s < 2; s++) {
-            const snack = babySnacks[babySnackIndex % babySnacks.length]
+            const snack = babySnacks[(babySnackIndex + s) % babySnacks.length]
             babySnacksList.push(snack.name)
             
             // Add snack ingredients to shopping list
@@ -296,10 +324,11 @@ export default async function handler(
                 }
               })
             }
-            
-            // Rotate snacks slowly (can repeat multiple days)
-            if (s === 1 && i % 3 === 2) babySnackIndex++
           }
+          
+          // Rotate snacks every day to get variety throughout the week
+          // This ensures different combinations each day
+          babySnackIndex += 1
         }
         
         mealPlan.push({
