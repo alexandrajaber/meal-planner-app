@@ -60,10 +60,30 @@ export default async function handler(
     const parseIngredients = (recipe: Recipe): Recipe => {
       if (recipe.ingredients && typeof recipe.ingredients === 'string') {
         try {
-          recipe.ingredients = JSON.parse(recipe.ingredients as any)
+          // Parse once
+          let parsed = JSON.parse(recipe.ingredients as any)
+          
+          // Check if it's still a string (double-stringified)
+          if (typeof parsed === 'string') {
+            parsed = JSON.parse(parsed)
+          }
+          
+          // Clean up checkbox symbols and trim
+          if (Array.isArray(parsed)) {
+            parsed = parsed.map((item: string) => 
+              item.replace(/^▢\s*/, '').replace(/^\[\s*"/, '').replace(/"\s*\]$/, '').trim()
+            )
+          }
+          
+          recipe.ingredients = parsed
         } catch (e) {
           console.error('Failed to parse ingredients:', e)
         }
+      } else if (Array.isArray(recipe.ingredients)) {
+        // Clean existing arrays too
+        recipe.ingredients = recipe.ingredients.map((item: string) => 
+          item.replace(/^▢\s*/, '').trim()
+        )
       }
       return recipe
     }
