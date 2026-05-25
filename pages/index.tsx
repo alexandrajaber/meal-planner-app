@@ -25,6 +25,7 @@ export default function Home() {
   const [nurseryDays, setNurseryDays] = useState(['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'])
   const [editingShoppingItem, setEditingShoppingItem] = useState(null)
   const [newShoppingItem, setNewShoppingItem] = useState('')
+  const [weekMultiplier, setWeekMultiplier] = useState(1)
 
   const categorizeIngredients = (ingredients) => {
     // Safety check - ensure ingredients is an array
@@ -272,7 +273,8 @@ export default function Home() {
           recipes,
           awayDays,
           startDate,
-          nurseryDays
+          nurseryDays,
+          weekMultiplier
         })
       })
 
@@ -449,6 +451,16 @@ export default function Home() {
                   ))}
                 </div>
                 <p style={{ fontSize: '12px', color: '#666', marginTop: '6px' }}>On nursery days, baby gets 1 evening meal. On other days, baby gets 2 meals.</p>
+              </div>
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>Serving Size (for guests or larger portions)</label>
+                <select value={weekMultiplier} onChange={(e) => setWeekMultiplier(parseFloat(e.target.value))} style={{ width: '100%', padding: '8px', border: '1px solid #ddd', borderRadius: '4px' }}>
+                  <option value="1">Normal (1x) - Just us</option>
+                  <option value="1.5">1.5x - Small gathering</option>
+                  <option value="2">Double (2x) - Guests or leftovers</option>
+                  <option value="3">Triple (3x) - Large gathering</option>
+                </select>
+                <p style={{ fontSize: '12px', color: '#666', marginTop: '6px' }}>This multiplies ALL ingredients in the shopping list for the whole week.</p>
               </div>
               {!session && (
                 <div style={{ background: '#fff3cd', padding: '12px', borderRadius: '6px', marginBottom: '16px', fontSize: '14px', color: '#856404' }}>
