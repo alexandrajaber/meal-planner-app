@@ -82,6 +82,9 @@ export default async function handler(
       // Select dinner recipe
       if (adultRecipes.length > 0) {
         const recipe = adultRecipes[recipeIndex % adultRecipes.length]
+        console.log('🔵 Selected recipe:', recipe.name)
+        console.log('🔵 Recipe ingredients:', recipe.ingredients)
+        console.log('🔵 Is array?', Array.isArray(recipe.ingredients))
         recipeIndex++
         
         // Detect category from ingredients
@@ -161,7 +164,10 @@ export default async function handler(
     }
     
     // Convert shopping list to array format
+    console.log('🔵 Shopping list object:', shoppingList)
+    console.log('🔵 Object keys:', Object.keys(shoppingList))
     const shoppingListArray = Object.values(shoppingList)
+    console.log('🔵 Shopping list array:', shoppingListArray)
     
     res.status(200).json({ 
       mealPlan, 
