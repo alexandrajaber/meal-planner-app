@@ -34,6 +34,52 @@ function detectCategory(ingredients: string[] | null): string {
   return 'other'
 }
 
+// Convert cups/tablespoons to grams/liters (approximate)
+function convertToMetric(ingredient: string): string {
+  const lowerIngredient = ingredient.toLowerCase()
+  
+  // Check if it's a liquid
+  const isLiquid = lowerIngredient.match(/\b(water|milk|cream|oil|stock|broth|vodka|wine|juice|sauce|vinegar|coconut milk)\b/)
+  
+  // Convert cups
+  ingredient = ingredient.replace(/(\d+(?:\/\d+)?)\s*cups?/gi, (match, num) => {
+    const cups = eval(num) // Convert fractions like 1/4
+    if (isLiquid) {
+      const ml = Math.round(cups * 240)
+      return ml >= 1000 ? `${(ml / 1000).toFixed(1)}L` : `${ml}ml`
+    } else {
+      const grams = Math.round(cups * 240)
+      return `${grams}g`
+    }
+  })
+  
+  // Convert tablespoons
+  ingredient = ingredient.replace(/(\d+(?:\/\d+)?)\s*tablespoons?/gi, (match, num) => {
+    const tbsp = eval(num)
+    if (isLiquid) {
+      const ml = Math.round(tbsp * 15)
+      return `${ml}ml`
+    } else {
+      const grams = Math.round(tbsp * 15)
+      return `${grams}g`
+    }
+  })
+  
+  // Convert teaspoons
+  ingredient = ingredient.replace(/(\d+(?:\/\d+)?)\s*teaspoons?/gi, (match, num) => {
+    const tsp = eval(num)
+    if (isLiquid) {
+      const ml = Math.round(tsp * 5)
+      return `${ml}ml`
+    } else {
+      const grams = Math.round(tsp * 5)
+      return `${grams}g`
+    }
+  })
+  
+  return ingredient
+}
+
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
@@ -66,6 +112,13 @@ export default async function handler(
           // Check if it's still a string (double-stringified)
           if (typeof parsed === 'string') {
             parsed = JSON.parse(parsed)
+          }
+          
+          // If it's an array with a single long string, split by commas
+          if (Array.isArray(parsed) && parsed.length === 1 && parsed[0].includes('","')) {
+            // This is a single string with comma-separated items
+            const singleString = parsed[0]
+            parsed = singleString.split('","').map((s: string) => s.replace(/^\[?"/, '').replace(/"\]?$/, ''))
           }
           
           // Clean up checkbox symbols and trim
@@ -190,9 +243,10 @@ export default async function handler(
         // Add adult recipe ingredients to shopping list
         if (recipe.ingredients && Array.isArray(recipe.ingredients)) {
           recipe.ingredients.forEach(ingredient => {
-            const key = ingredient.toLowerCase()
+            const converted = convertToMetric(ingredient)
+            const key = converted.toLowerCase()
             if (!shoppingList[key]) {
-              shoppingList[key] = ingredient
+              shoppingList[key] = converted
             }
           })
         }
