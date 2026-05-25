@@ -411,13 +411,15 @@ export default function Home() {
               </div>
 
               <div style={{ marginBottom: '20px' }}>
-                <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#4a5568', fontSize: '14px' }}>Serving Multiplier</label>
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#4a5568', fontSize: '14px' }}>Number of Servings</label>
                 <select value={servingMultiplier} onChange={(e) => setServingMultiplier(parseFloat(e.target.value))} style={{ width: '100%', padding: '12px 16px', border: '2px solid #e2e8f0', borderRadius: '12px', fontSize: '15px', transition: 'border 0.2s', outline: 'none' }}>
-                  <option value="1">Standard (1x)</option>
-                  <option value="1.5">1.5x servings</option>
-                  <option value="2">Double (2x)</option>
-                  <option value="3">Triple (3x)</option>
+                  <option value="1">1 serving (cook daily)</option>
+                  <option value="2">2 servings (1 day for 2 people)</option>
+                  <option value="4">4 servings (2 days for 2 people)</option>
+                  <option value="6">6 servings (3 days for 2 people)</option>
+                  <option value="8">8 servings (4 days for 2 people)</option>
                 </select>
+                <p style={{ fontSize: '12px', color: '#666', marginTop: '6px' }}>How many servings does this recipe make? (2 people eating = 2 servings/day)</p>
               </div>
 
               <div style={{ marginBottom: '24px' }}>
@@ -444,7 +446,7 @@ export default function Home() {
                       <button onClick={() => startEditRecipe('adult', r)} style={{ background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)', color: 'white', border: 'none', width: '32px', height: '32px', borderRadius: '50%', cursor: 'pointer', fontSize: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(240, 147, 251, 0.4)' }}>✏️</button>
                       <button onClick={() => deleteRecipe('adult', r.id)} style={{ background: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)', color: 'white', border: 'none', width: '32px', height: '32px', borderRadius: '50%', cursor: 'pointer', fontSize: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(250, 112, 154, 0.4)' }}>×</button>
                     </div>
-                    <h3 style={{ marginBottom: '12px', paddingRight: '70px', fontSize: '18px', fontWeight: '600', color: '#2d3748' }}>{r.name} {r.multiplier !== 1 && <span style={{ background: 'linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%)', color: '#2d3748', fontSize: '11px', padding: '3px 10px', borderRadius: '20px', marginLeft: '8px', fontWeight: '600' }}>{r.multiplier}x</span>}</h3>
+                    <h3 style={{ marginBottom: '12px', paddingRight: '70px', fontSize: '18px', fontWeight: '600', color: '#2d3748' }}>{r.name} {r.multiplier !== 1 && <span style={{ background: 'linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%)', color: '#2d3748', fontSize: '11px', padding: '3px 10px', borderRadius: '20px', marginLeft: '8px', fontWeight: '600' }}>{r.multiplier} servings</span>}</h3>
                     {r.link && <a href={r.link} target="_blank" style={{ color: '#667eea', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '10px', textDecoration: 'none', fontWeight: '500' }}>🔗 View recipe</a>}
                     {r.ingredients && <div style={{ fontSize: '13px', color: '#718096', lineHeight: '1.6' }}>{Array.isArray(r.ingredients) ? r.ingredients.join(', ') : r.ingredients}</div>}
                   </div>
@@ -522,17 +524,20 @@ export default function Home() {
                           <div>
                             <div style={{ marginBottom: '4px' }}>
                               🍽️ Dinner: {day.dinnerLink ? <a href={day.dinnerLink} target="_blank" style={{ color: '#667eea' }}>{day.dinner}</a> : day.dinner}
+                              {day.isLeftover && <span style={{ marginLeft: '8px', fontSize: '11px', padding: '2px 8px', borderRadius: '10px', background: '#e0f2fe', color: '#075985', fontWeight: '500' }}>♻️ Leftovers (Day {day.leftoverDay})</span>}
                               {day.category && <span style={{ marginLeft: '8px', fontSize: '11px', padding: '2px 8px', borderRadius: '10px', background: '#feebc8', color: '#7c2d12' }}>{day.category}</span>}
-                              <select 
-                                value={dayMultipliers[day.date] || 1} 
-                                onChange={(e) => setDayMultipliers({...dayMultipliers, [day.date]: parseFloat(e.target.value)})}
-                                style={{ marginLeft: '8px', padding: '4px 8px', fontSize: '12px', border: '1px solid #ddd', borderRadius: '4px' }}
-                              >
-                                <option value="1">1x</option>
-                                <option value="1.5">1.5x</option>
-                                <option value="2">2x</option>
-                                <option value="3">3x</option>
-                              </select>
+                              {!day.isLeftover && (
+                                <select 
+                                  value={dayMultipliers[day.date] || 1} 
+                                  onChange={(e) => setDayMultipliers({...dayMultipliers, [day.date]: parseFloat(e.target.value)})}
+                                  style={{ marginLeft: '8px', padding: '4px 8px', fontSize: '12px', border: '1px solid #ddd', borderRadius: '4px' }}
+                                >
+                                  <option value="1">1x</option>
+                                  <option value="1.5">1.5x</option>
+                                  <option value="2">2x</option>
+                                  <option value="3">3x</option>
+                                </select>
+                              )}
                             </div>
                             {day.babySnacks && <div style={{ fontSize: '14px' }}>👶 Baby: {day.babySnacks.join(', ')}</div>}
                           </div>
