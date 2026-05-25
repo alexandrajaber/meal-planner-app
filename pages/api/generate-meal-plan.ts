@@ -149,11 +149,23 @@ export default async function handler(
             parsed = singleString.split('","').map((s: string) => s.replace(/^\[?"/, '').replace(/"\]?$/, ''))
           }
           
-          // Clean up checkbox symbols and trim
+          // Clean up checkbox symbols, escaped quotes, and trim
           if (Array.isArray(parsed)) {
-            parsed = parsed.map((item: string) => 
-              item.replace(/^▢\s*/, '').replace(/^\[\s*"/, '').replace(/"\s*\]$/, '').trim()
-            )
+            parsed = parsed.map((item: string) => {
+              if (typeof item !== 'string') return String(item)
+              
+              // Remove escaped quotes and backslashes
+              return item
+                .replace(/^▢\s*/, '')
+                .replace(/^\[\s*"/, '')
+                .replace(/"\s*\]$/, '')
+                .replace(/\\\\/g, '')  // Remove double backslashes
+                .replace(/\\"/g, '"')  // Unescape quotes
+                .replace(/\\n/g, '')   // Remove newline escapes
+                .replace(/\[\\"/g, '')  // Remove [\" patterns
+                .replace(/\\"\]/g, '')  // Remove \"] patterns
+                .trim()
+            }).filter((item: string) => item.length > 0)
           }
           
           recipe.ingredients = parsed
@@ -162,9 +174,18 @@ export default async function handler(
         }
       } else if (Array.isArray(recipe.ingredients)) {
         // Clean existing arrays too
-        recipe.ingredients = recipe.ingredients.map((item: string) => 
-          item.replace(/^▢\s*/, '').trim()
-        )
+        recipe.ingredients = recipe.ingredients.map((item: string) => {
+          if (typeof item !== 'string') return String(item)
+          
+          return item
+            .replace(/^▢\s*/, '')
+            .replace(/\\\\/g, '')
+            .replace(/\\"/g, '"')
+            .replace(/\\n/g, '')
+            .replace(/\[\\"/g, '')
+            .replace(/\\"\]/g, '')
+            .trim()
+        }).filter((item: string) => item.length > 0)
       }
       return recipe
     }
