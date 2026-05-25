@@ -262,6 +262,9 @@ export default function Home() {
       const calendarData = await calendarRes.json()
       awayDays = calendarData.awayDays || []
 
+      console.log('🔵 Recipes being sent to API:', recipes)
+      console.log('🔵 Sample adult recipe:', recipes.adult[0])
+
       const planRes = await fetch('/api/generate-meal-plan', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -274,9 +277,14 @@ export default function Home() {
       })
 
       const { mealPlan, shoppingList } = await planRes.json()
+      console.log('🔵 Raw shopping list from API:', shoppingList)
+      console.log('🔵 Type:', typeof shoppingList, 'Is array?', Array.isArray(shoppingList))
+      
       setMealPlan(mealPlan)
       // Apply smart categorization to shopping list
-      setShoppingList(categorizeIngredients(shoppingList))
+      const categorized = categorizeIngredients(shoppingList)
+      console.log('🔵 After categorization:', categorized)
+      setShoppingList(categorized)
     } catch (error) {
       alert('Failed to generate meal plan: ' + error.message)
     } finally {
