@@ -476,6 +476,40 @@ export default function Home() {
               </div>
             </div>
 
+            <div style={{ marginBottom: '32px' }}>
+              <h2 style={{ fontSize: '24px', fontWeight: '600', color: '#2d3748', marginBottom: '20px' }}>👶 Baby Meals <span style={{ background: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)', color: 'white', fontSize: '14px', padding: '4px 12px', borderRadius: '20px', marginLeft: '12px', fontWeight: '500' }}>{recipes.babyRecipe.length}</span></h2>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '20px' }}>
+                {recipes.babyRecipe.map(r => (
+                  <div key={r.id} style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: '16px', padding: '20px', position: 'relative', boxShadow: '0 2px 10px rgba(0, 0, 0, 0.05)', transition: 'transform 0.2s, box-shadow 0.2s' }}>
+                    <div style={{ position: 'absolute', top: '16px', right: '16px', display: 'flex', gap: '6px' }}>
+                      <button onClick={() => startEditRecipe('babyRecipe', r)} style={{ background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)', color: 'white', border: 'none', width: '32px', height: '32px', borderRadius: '50%', cursor: 'pointer', fontSize: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(240, 147, 251, 0.4)' }}>✏️</button>
+                      <button onClick={() => deleteRecipe('babyRecipe', r.id)} style={{ background: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)', color: 'white', border: 'none', width: '32px', height: '32px', borderRadius: '50%', cursor: 'pointer', fontSize: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(250, 112, 154, 0.4)' }}>×</button>
+                    </div>
+                    <h3 style={{ marginBottom: '12px', paddingRight: '70px', fontSize: '18px', fontWeight: '600', color: '#2d3748' }}>{r.name} {r.multiplier !== 1 && <span style={{ background: 'linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%)', color: '#2d3748', fontSize: '11px', padding: '3px 10px', borderRadius: '20px', marginLeft: '8px', fontWeight: '600' }}>{r.multiplier} servings</span>}</h3>
+                    {r.link && <a href={r.link} target="_blank" style={{ color: '#667eea', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '10px', textDecoration: 'none', fontWeight: '500' }}>🔗 View recipe</a>}
+                    {r.ingredients && <div style={{ fontSize: '13px', color: '#718096', lineHeight: '1.6' }}>{Array.isArray(r.ingredients) ? r.ingredients.join(', ') : r.ingredients}</div>}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div style={{ marginBottom: '32px' }}>
+              <h2 style={{ fontSize: '24px', fontWeight: '600', color: '#2d3748', marginBottom: '20px' }}>🍎 Baby Snacks <span style={{ background: 'linear-gradient(135deg, #f472b6 0%, #ec4899 100%)', color: 'white', fontSize: '14px', padding: '4px 12px', borderRadius: '20px', marginLeft: '12px', fontWeight: '500' }}>{recipes.babySnack.length}</span></h2>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '20px' }}>
+                {recipes.babySnack.map(r => (
+                  <div key={r.id} style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: '16px', padding: '20px', position: 'relative', boxShadow: '0 2px 10px rgba(0, 0, 0, 0.05)', transition: 'transform 0.2s, box-shadow 0.2s' }}>
+                    <div style={{ position: 'absolute', top: '16px', right: '16px', display: 'flex', gap: '6px' }}>
+                      <button onClick={() => startEditRecipe('babySnack', r)} style={{ background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)', color: 'white', border: 'none', width: '32px', height: '32px', borderRadius: '50%', cursor: 'pointer', fontSize: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(240, 147, 251, 0.4)' }}>✏️</button>
+                      <button onClick={() => deleteRecipe('babySnack', r.id)} style={{ background: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)', color: 'white', border: 'none', width: '32px', height: '32px', borderRadius: '50%', cursor: 'pointer', fontSize: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(250, 112, 154, 0.4)' }}>×</button>
+                    </div>
+                    <h3 style={{ marginBottom: '12px', paddingRight: '70px', fontSize: '18px', fontWeight: '600', color: '#2d3748' }}>{r.name}</h3>
+                    {r.link && <a href={r.link} target="_blank" style={{ color: '#667eea', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '10px', textDecoration: 'none', fontWeight: '500' }}>🔗 View recipe</a>}
+                    {r.ingredients && <div style={{ fontSize: '13px', color: '#718096', lineHeight: '1.6' }}>{Array.isArray(r.ingredients) ? r.ingredients.join(', ') : r.ingredients}</div>}
+                  </div>
+                ))}
+              </div>
+            </div>
+
             <div style={{ background: 'white', padding: '24px', borderRadius: '12px', marginBottom: '24px' }}>
               <h2 style={{ marginBottom: '16px' }}>Generate Weekly Meal Plan</h2>
               <div style={{ marginBottom: '16px' }}>
