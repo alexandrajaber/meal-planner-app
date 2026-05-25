@@ -115,8 +115,16 @@ export default function Home() {
 
     const ingredientList = manualIngredients.split('\n').map(i => i.trim()).filter(i => i.length > 0)
 
+    console.log('🔵 Adding recipe:', {
+      name: recipeName,
+      type: recipeType,
+      link: recipeLink || null,
+      multiplier: servingMultiplier,
+      ingredients: ingredientList.length > 0 ? ingredientList : null
+    })
+
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('recipes')
         .insert([{
           name: recipeName,
@@ -125,8 +133,14 @@ export default function Home() {
           multiplier: servingMultiplier,
           ingredients: ingredientList.length > 0 ? ingredientList : null
         }])
+        .select()
       
-      if (error) throw error
+      console.log('🔵 Insert result:', { data, error })
+      
+      if (error) {
+        console.error('🔴 Error adding recipe:', error)
+        throw error
+      }
       
       await loadRecipes()
       
