@@ -15,6 +15,8 @@ type MealPlanDay = {
   dinner?: string
   dinnerLink?: string
   category?: string
+  isLeftover?: boolean
+  leftoverDay?: number
   babyMeals?: string[]
   babySnacks?: string[]
 }
