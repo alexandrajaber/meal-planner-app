@@ -413,10 +413,20 @@ export default function Home() {
               <div style={{ marginBottom: '20px' }}>
                 <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#4a5568', fontSize: '14px' }}>Number of Servings</label>
                 <select value={servingMultiplier} onChange={(e) => setServingMultiplier(parseFloat(e.target.value))} style={{ width: '100%', padding: '12px 16px', border: '2px solid #e2e8f0', borderRadius: '12px', fontSize: '15px', transition: 'border 0.2s', outline: 'none' }}>
-                  <option value="1">1 serving (cook daily)</option>
+                  <option value="1">1 serving</option>
+                  <option value="1.5">1.5 servings</option>
                   <option value="2">2 servings (1 day for 2 people)</option>
+                  <option value="2.5">2.5 servings</option>
+                  <option value="3">3 servings (1.5 days for 2 people)</option>
+                  <option value="3.5">3.5 servings</option>
                   <option value="4">4 servings (2 days for 2 people)</option>
+                  <option value="4.5">4.5 servings</option>
+                  <option value="5">5 servings (2.5 days for 2 people)</option>
+                  <option value="5.5">5.5 servings</option>
                   <option value="6">6 servings (3 days for 2 people)</option>
+                  <option value="6.5">6.5 servings</option>
+                  <option value="7">7 servings (3.5 days for 2 people)</option>
+                  <option value="7.5">7.5 servings</option>
                   <option value="8">8 servings (4 days for 2 people)</option>
                 </select>
                 <p style={{ fontSize: '12px', color: '#666', marginTop: '6px' }}>How many servings does this recipe make? (2 people eating = 2 servings/day)</p>
