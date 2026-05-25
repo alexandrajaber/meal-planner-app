@@ -114,7 +114,7 @@ export default async function handler(
     return res.status(405).json({ error: 'Method not allowed' })
   }
 
-  const { recipes, awayDays, startDate, nurseryDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'], weekMultiplier = 1 } = req.body
+  const { recipes, awayDays, startDate, nurseryDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'], dayMultipliers = {}, existingMealPlan = null } = req.body
 
   try {
     const mealPlan: MealPlanDay[] = []
@@ -270,7 +270,8 @@ export default async function handler(
         if (recipe.ingredients && Array.isArray(recipe.ingredients)) {
           recipe.ingredients.forEach(ingredient => {
             const converted = convertToMetric(ingredient)
-            const multiplied = multiplyIngredient(converted, recipe.multiplier * weekMultiplier)
+            const dayMultiplier = dayMultipliers[dateStr] || 1
+            const multiplied = multiplyIngredient(converted, recipe.multiplier * dayMultiplier)
             const key = multiplied.toLowerCase()
             if (!shoppingList[key]) {
               shoppingList[key] = multiplied
