@@ -88,9 +88,21 @@ export default function Home() {
       
       if (error) throw error
       
+      // Parse ingredients for each recipe
+      const parsedData = data?.map(recipe => {
+        if (recipe.ingredients && typeof recipe.ingredients === 'string') {
+          try {
+            recipe.ingredients = JSON.parse(recipe.ingredients)
+          } catch (e) {
+            console.error('Failed to parse ingredients for recipe:', recipe.name, e)
+          }
+        }
+        return recipe
+      })
+      
       // Group recipes by type
       const grouped = { adult: [], babyRecipe: [], babySnack: [] }
-      data?.forEach(recipe => {
+      parsedData?.forEach(recipe => {
         if (grouped[recipe.type]) {
           grouped[recipe.type].push(recipe)
         }
