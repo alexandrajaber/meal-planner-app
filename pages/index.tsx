@@ -25,7 +25,7 @@ export default function Home() {
   const [nurseryDays, setNurseryDays] = useState(['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'])
   const [editingShoppingItem, setEditingShoppingItem] = useState(null)
   const [newShoppingItem, setNewShoppingItem] = useState('')
-  const [weekMultiplier, setWeekMultiplier] = useState(1)
+  const [dayMultipliers, setDayMultipliers] = useState({})
 
   const categorizeIngredients = (ingredients) => {
     // Safety check - ensure ingredients is an array
@@ -274,7 +274,7 @@ export default function Home() {
           awayDays,
           startDate,
           nurseryDays,
-          weekMultiplier
+          dayMultipliers
         })
       })
 
@@ -452,16 +452,6 @@ export default function Home() {
                 </div>
                 <p style={{ fontSize: '12px', color: '#666', marginTop: '6px' }}>On nursery days, baby gets 1 evening meal. On other days, baby gets 2 meals.</p>
               </div>
-              <div style={{ marginBottom: '16px' }}>
-                <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>Serving Size (for guests or larger portions)</label>
-                <select value={weekMultiplier} onChange={(e) => setWeekMultiplier(parseFloat(e.target.value))} style={{ width: '100%', padding: '8px', border: '1px solid #ddd', borderRadius: '4px' }}>
-                  <option value="1">Normal (1x) - Just us</option>
-                  <option value="1.5">1.5x - Small gathering</option>
-                  <option value="2">Double (2x) - Guests or leftovers</option>
-                  <option value="3">Triple (3x) - Large gathering</option>
-                </select>
-                <p style={{ fontSize: '12px', color: '#666', marginTop: '6px' }}>This multiplies ALL ingredients in the shopping list for the whole week.</p>
-              </div>
               {!session && (
                 <div style={{ background: '#fff3cd', padding: '12px', borderRadius: '6px', marginBottom: '16px', fontSize: '14px', color: '#856404' }}>
                   💡 Connect your Google Calendar above to automatically skip days marked as "Holiday:" in your calendar
@@ -504,6 +494,16 @@ export default function Home() {
                             <div style={{ marginBottom: '4px' }}>
                               🍽️ Dinner: {day.dinnerLink ? <a href={day.dinnerLink} target="_blank" style={{ color: '#667eea' }}>{day.dinner}</a> : day.dinner}
                               {day.category && <span style={{ marginLeft: '8px', fontSize: '11px', padding: '2px 8px', borderRadius: '10px', background: '#feebc8', color: '#7c2d12' }}>{day.category}</span>}
+                              <select 
+                                value={dayMultipliers[day.date] || 1} 
+                                onChange={(e) => setDayMultipliers({...dayMultipliers, [day.date]: parseFloat(e.target.value)})}
+                                style={{ marginLeft: '8px', padding: '4px 8px', fontSize: '12px', border: '1px solid #ddd', borderRadius: '4px' }}
+                              >
+                                <option value="1">1x</option>
+                                <option value="1.5">1.5x</option>
+                                <option value="2">2x</option>
+                                <option value="3">3x</option>
+                              </select>
                             </div>
                             {day.babySnacks && <div style={{ fontSize: '14px' }}>👶 Baby: {day.babySnacks.join(', ')}</div>}
                           </div>
@@ -518,6 +518,32 @@ export default function Home() {
                     </div>
                   </div>
                 ))}
+                <button 
+                  onClick={async () => {
+                    try {
+                      const planRes = await fetch('/api/generate-meal-plan', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                          recipes,
+                          awayDays: [],
+                          startDate,
+                          nurseryDays,
+                          dayMultipliers,
+                          existingMealPlan: mealPlan
+                        })
+                      })
+                      const { shoppingList } = await planRes.json()
+                      setShoppingList(categorizeIngredients(shoppingList))
+                      alert('Shopping list updated!')
+                    } catch (error) {
+                      alert('Failed to update shopping list')
+                    }
+                  }}
+                  style={{ marginTop: '16px', background: '#48bb78', color: 'white', padding: '12px 24px', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '500', width: '100%' }}
+                >
+                  🔄 Update Shopping List with Multipliers
+                </button>
               </div>
             )}
 
