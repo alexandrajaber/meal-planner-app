@@ -334,56 +334,71 @@ export default function Home() {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
       
-      <div style={{ minHeight: '100vh', background: '#f5f5f5' }}>
+      <div style={{ minHeight: '100vh', background: 'linear-gradient(to bottom, #f8f9fa 0%, #e9ecef 100%)' }}>
         <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-          <div style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white', padding: '32px', textAlign: 'center' }}>
-            <h1 style={{ fontSize: '32px', marginBottom: '8px' }}>🍽️ Family Meal Planner</h1>
-            <p style={{ opacity: 0.9 }}>Smart weekly meal planning with Google Calendar integration</p>
+          <div style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white', padding: '48px 32px', borderRadius: '0 0 24px 24px', boxShadow: '0 10px 40px rgba(102, 126, 234, 0.3)' }}>
+            <h1 style={{ fontSize: '40px', marginBottom: '12px', fontWeight: '700', letterSpacing: '-0.5px' }}>🍽️ Family Meal Planner</h1>
+            <p style={{ opacity: 0.95, fontSize: '18px', fontWeight: '300' }}>Smart weekly planning with calendar sync & shared recipes</p>
           </div>
 
           <div style={{ padding: '32px' }}>
-            <div style={{ background: session ? '#c6f6d5' : '#e6f7ff', padding: '16px', borderRadius: '8px', marginBottom: '24px', color: session ? '#22543d' : '#2c5282' }}>
+            <div style={{ 
+              background: session ? 'linear-gradient(135deg, #d4fc79 0%, #96e6a1 100%)' : 'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)', 
+              padding: '20px 24px', 
+              borderRadius: '16px', 
+              marginBottom: '32px', 
+              border: '1px solid rgba(255, 255, 255, 0.5)',
+              boxShadow: '0 4px 15px rgba(0, 0, 0, 0.1)'
+            }}>
               {status === 'loading' ? (
-                <div>Checking calendar connection...</div>
+                <div style={{ color: '#2d3748', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div style={{ width: '20px', height: '20px', border: '3px solid #667eea', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
+                  <span>Checking calendar connection...</span>
+                </div>
               ) : session ? (
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
-                  <span>✓ Calendar connected as {session.user?.email}</span>
-                  <button onClick={() => signOut()} style={{ padding: '8px 16px', background: 'white', border: '1px solid #ddd', borderRadius: '4px', cursor: 'pointer' }}>Disconnect</button>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#22543d', fontWeight: '500' }}>
+                    <span style={{ fontSize: '20px' }}>✓</span>
+                    <span>Calendar connected as <strong>{session.user?.email}</strong></span>
+                  </div>
+                  <button onClick={() => signOut()} style={{ padding: '10px 20px', background: 'white', border: '2px solid rgba(34, 84, 61, 0.2)', borderRadius: '10px', cursor: 'pointer', fontWeight: '500', color: '#22543d', transition: 'all 0.2s' }}>Disconnect</button>
                 </div>
               ) : (
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
-                  <span>📅 Optional: Connect Google Calendar to skip "Holiday:" days</span>
-                  <button onClick={() => signIn('google')} style={{ padding: '8px 16px', background: '#667eea', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Connect Calendar</button>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#2d3748', fontWeight: '400' }}>
+                    <span style={{ fontSize: '20px' }}>📅</span>
+                    <span>Optional: Connect Google Calendar to skip "Holiday:" days</span>
+                  </div>
+                  <button onClick={() => signIn('google')} style={{ padding: '10px 20px', background: 'white', border: 'none', borderRadius: '10px', cursor: 'pointer', fontWeight: '500', color: '#667eea', boxShadow: '0 2px 8px rgba(102, 126, 234, 0.2)', transition: 'all 0.2s' }}>Connect Calendar</button>
                 </div>
               )}
             </div>
 
-            {/* Rest of the UI - I'll create a simpler version for now */}
-            <div style={{ background: 'white', padding: '24px', borderRadius: '12px', marginBottom: '24px' }}>
-              <h2 style={{ marginBottom: '16px' }}>Add Recipe</h2>
+            <div style={{ background: 'white', padding: '32px', borderRadius: '20px', marginBottom: '32px', boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)', border: '1px solid rgba(0, 0, 0, 0.05)' }}>
+              <h2 style={{ marginBottom: '24px', fontSize: '24px', fontWeight: '600', color: '#2d3748' }}>✨ Add Recipe</h2>
               
-              <div style={{ marginBottom: '16px' }}>
-                <label style={{ display: 'block', marginBottom: '4px', fontWeight: '500' }}>Recipe Type</label>
-                <select value={recipeType} onChange={(e) => setRecipeType(e.target.value)} style={{ width: '100%', padding: '8px', border: '1px solid #ddd', borderRadius: '4px' }}>
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#4a5568', fontSize: '14px' }}>Recipe Type</label>
+                <select value={recipeType} onChange={(e) => setRecipeType(e.target.value)} style={{ width: '100%', padding: '12px 16px', border: '2px solid #e2e8f0', borderRadius: '12px', fontSize: '15px', transition: 'border 0.2s', outline: 'none' }}>
                   <option value="adult">Family Recipe</option>
                   <option value="babyRecipe">Baby-Friendly Recipe</option>
                   <option value="babySnack">Baby Snack</option>
                 </select>
               </div>
 
-              <div style={{ marginBottom: '16px' }}>
-                <label style={{ display: 'block', marginBottom: '4px', fontWeight: '500' }}>Recipe Name</label>
-                <input value={recipeName} onChange={(e) => setRecipeName(e.target.value)} placeholder="e.g., Spaghetti Bolognese" style={{ width: '100%', padding: '8px', border: '1px solid #ddd', borderRadius: '4px' }} />
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#4a5568', fontSize: '14px' }}>Recipe Name</label>
+                <input value={recipeName} onChange={(e) => setRecipeName(e.target.value)} placeholder="e.g., Spaghetti Bolognese" style={{ width: '100%', padding: '12px 16px', border: '2px solid #e2e8f0', borderRadius: '12px', fontSize: '15px', transition: 'border 0.2s', outline: 'none' }} />
               </div>
 
-              <div style={{ marginBottom: '16px' }}>
-                <label style={{ display: 'block', marginBottom: '4px', fontWeight: '500' }}>Recipe Link</label>
-                <input value={recipeLink} onChange={(e) => setRecipeLink(e.target.value)} placeholder="https://..." style={{ width: '100%', padding: '8px', border: '1px solid #ddd', borderRadius: '4px' }} />
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#4a5568', fontSize: '14px' }}>Recipe Link</label>
+                <input value={recipeLink} onChange={(e) => setRecipeLink(e.target.value)} placeholder="https://..." style={{ width: '100%', padding: '12px 16px', border: '2px solid #e2e8f0', borderRadius: '12px', fontSize: '15px', transition: 'border 0.2s', outline: 'none' }} />
               </div>
 
-              <div style={{ marginBottom: '16px' }}>
-                <label style={{ display: 'block', marginBottom: '4px', fontWeight: '500' }}>Serving Multiplier</label>
-                <select value={servingMultiplier} onChange={(e) => setServingMultiplier(parseFloat(e.target.value))} style={{ width: '100%', padding: '8px', border: '1px solid #ddd', borderRadius: '4px' }}>
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#4a5568', fontSize: '14px' }}>Serving Multiplier</label>
+                <select value={servingMultiplier} onChange={(e) => setServingMultiplier(parseFloat(e.target.value))} style={{ width: '100%', padding: '12px 16px', border: '2px solid #e2e8f0', borderRadius: '12px', fontSize: '15px', transition: 'border 0.2s', outline: 'none' }}>
                   <option value="1">Standard (1x)</option>
                   <option value="1.5">1.5x servings</option>
                   <option value="2">Double (2x)</option>
@@ -391,33 +406,33 @@ export default function Home() {
                 </select>
               </div>
 
-              <div style={{ marginBottom: '16px' }}>
-                <label style={{ display: 'block', marginBottom: '4px', fontWeight: '500' }}>Manual Ingredients</label>
-                <textarea value={manualIngredients} onChange={(e) => setManualIngredients(e.target.value)} placeholder="One per line..." style={{ width: '100%', padding: '8px', border: '1px solid #ddd', borderRadius: '4px', minHeight: '100px' }} />
+              <div style={{ marginBottom: '24px' }}>
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#4a5568', fontSize: '14px' }}>Manual Ingredients</label>
+                <textarea value={manualIngredients} onChange={(e) => setManualIngredients(e.target.value)} placeholder="One per line..." style={{ width: '100%', padding: '12px 16px', border: '2px solid #e2e8f0', borderRadius: '12px', fontSize: '15px', minHeight: '120px', transition: 'border 0.2s', outline: 'none', fontFamily: 'inherit' }} />
               </div>
 
-              <button onClick={editingRecipe ? updateRecipe : addRecipe} style={{ background: editingRecipe ? '#ed8936' : '#667eea', color: 'white', padding: '12px 24px', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '500' }}>
-              {editingRecipe ? 'Update Recipe' : 'Add Recipe'}
+              <button onClick={editingRecipe ? updateRecipe : addRecipe} style={{ background: editingRecipe ? 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)' : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white', padding: '14px 32px', border: 'none', borderRadius: '12px', cursor: 'pointer', fontWeight: '600', fontSize: '16px', boxShadow: '0 4px 15px rgba(102, 126, 234, 0.4)', transition: 'transform 0.2s' }}>
+              {editingRecipe ? '✏️ Update Recipe' : '➕ Add Recipe'}
             </button>
             {editingRecipe && (
-              <button onClick={cancelEdit} style={{ background: '#cbd5e0', color: '#2d3748', padding: '12px 24px', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '500', marginLeft: '8px' }}>
+              <button onClick={cancelEdit} style={{ background: '#e2e8f0', color: '#2d3748', padding: '14px 32px', border: 'none', borderRadius: '12px', cursor: 'pointer', fontWeight: '600', fontSize: '16px', marginLeft: '12px', transition: 'all 0.2s' }}>
                 Cancel
               </button>
             )}
             </div>
 
-            <div style={{ marginBottom: '24px' }}>
-              <h2>Family Recipes ({recipes.adult.length})</h2>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '16px', marginTop: '16px' }}>
+            <div style={{ marginBottom: '32px' }}>
+              <h2 style={{ fontSize: '24px', fontWeight: '600', color: '#2d3748', marginBottom: '20px' }}>🍕 Family Recipes <span style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white', fontSize: '14px', padding: '4px 12px', borderRadius: '20px', marginLeft: '12px', fontWeight: '500' }}>{recipes.adult.length}</span></h2>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '20px' }}>
                 {recipes.adult.map(r => (
-                  <div key={r.id} style={{ background: 'white', border: '1px solid #e0e0e0', borderRadius: '8px', padding: '16px', position: 'relative' }}>
-                    <div style={{ position: 'absolute', top: '12px', right: '12px', display: 'flex', gap: '4px' }}>
-                      <button onClick={() => startEditRecipe('adult', r)} style={{ background: '#ed8936', color: 'white', border: 'none', width: '28px', height: '28px', borderRadius: '50%', cursor: 'pointer', fontSize: '14px' }}>✏️</button>
-                      <button onClick={() => deleteRecipe('adult', r.id)} style={{ background: '#f56565', color: 'white', border: 'none', width: '28px', height: '28px', borderRadius: '50%', cursor: 'pointer' }}>×</button>
+                  <div key={r.id} style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: '16px', padding: '20px', position: 'relative', boxShadow: '0 2px 10px rgba(0, 0, 0, 0.05)', transition: 'transform 0.2s, box-shadow 0.2s' }}>
+                    <div style={{ position: 'absolute', top: '16px', right: '16px', display: 'flex', gap: '6px' }}>
+                      <button onClick={() => startEditRecipe('adult', r)} style={{ background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)', color: 'white', border: 'none', width: '32px', height: '32px', borderRadius: '50%', cursor: 'pointer', fontSize: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(240, 147, 251, 0.4)' }}>✏️</button>
+                      <button onClick={() => deleteRecipe('adult', r.id)} style={{ background: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)', color: 'white', border: 'none', width: '32px', height: '32px', borderRadius: '50%', cursor: 'pointer', fontSize: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(250, 112, 154, 0.4)' }}>×</button>
                     </div>
-                    <h3 style={{ marginBottom: '8px', paddingRight: '60px' }}>{r.name} {r.multiplier !== 1 && <span style={{ background: '#48bb78', color: 'white', fontSize: '11px', padding: '2px 8px', borderRadius: '12px', marginLeft: '8px' }}>{r.multiplier}x</span>}</h3>
-                    {r.link && <a href={r.link} target="_blank" style={{ color: '#667eea', fontSize: '13px', display: 'block', marginBottom: '8px' }}>🔗 View recipe</a>}
-                    {r.ingredients && <div style={{ fontSize: '13px', color: '#666' }}>{Array.isArray(r.ingredients) ? r.ingredients.join(', ') : r.ingredients}</div>}
+                    <h3 style={{ marginBottom: '12px', paddingRight: '70px', fontSize: '18px', fontWeight: '600', color: '#2d3748' }}>{r.name} {r.multiplier !== 1 && <span style={{ background: 'linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%)', color: '#2d3748', fontSize: '11px', padding: '3px 10px', borderRadius: '20px', marginLeft: '8px', fontWeight: '600' }}>{r.multiplier}x</span>}</h3>
+                    {r.link && <a href={r.link} target="_blank" style={{ color: '#667eea', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '10px', textDecoration: 'none', fontWeight: '500' }}>🔗 View recipe</a>}
+                    {r.ingredients && <div style={{ fontSize: '13px', color: '#718096', lineHeight: '1.6' }}>{Array.isArray(r.ingredients) ? r.ingredients.join(', ') : r.ingredients}</div>}
                   </div>
                 ))}
               </div>
